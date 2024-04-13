@@ -50,6 +50,7 @@ static void MotorSenderGrouping(DJIMotorInstance *motor, CAN_Init_Config_s *conf
     switch (motor->motor_type) {
         case M2006:
         case M3508:
+             motor_grouping = 0;
             if (motor_id < 4) // 根据ID分组
             {
                 motor_send_num = motor_id;
@@ -299,6 +300,6 @@ void DJIMotorControl()
     for (size_t i = 0; i < 9; ++i) {
         if (sender_enable_flag[i]) {
             CANTransmit(&sender_assignment[i], 1);
-        }
+        //}
     }
 }
