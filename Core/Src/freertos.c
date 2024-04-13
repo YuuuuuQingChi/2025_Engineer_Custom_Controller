@@ -54,6 +54,13 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
+/* Definitions for Buzzer */
+osThreadId_t BuzzerHandle;
+const osThreadAttr_t Buzzer_attributes = {
+  .name = "Buzzer",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
+};
 /* Definitions for Daemon */
 osThreadId_t DaemonHandle;
 const osThreadAttr_t Daemon_attributes = {

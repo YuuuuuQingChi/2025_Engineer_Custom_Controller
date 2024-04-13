@@ -34,7 +34,7 @@ static void CANAddFilter(CANInstance *_instance)
 	can_filter_conf.FilterIndex = (_instance->can_handle == &hfdcan1) ? (can1_filter_idx++) : ((_instance->can_handle == &hfdcan2) ? (can2_filter_idx++) : (can3_filter_idx++));                                  //滤波器索引                   
 	can_filter_conf.FilterType = FDCAN_FILTER_DUAL;                   //允许接收两个ID TODO: 后续可以优化使其能充分利用第二个ID位置
 	can_filter_conf.FilterConfig = (_instance->rx_id & 1) ? FDCAN_FILTER_TO_RXFIFO0 : FDCAN_FILTER_TO_RXFIFO1;           //过滤器0关联到FIFO0  
-	can_filter_conf.FilterID1 = 0x000;                               //32位ID接收ID1
+	can_filter_conf.FilterID1 = 0x7ff;                               //32位ID接收ID1
 	can_filter_conf.FilterID2 = _instance->rx_id;                               //接收ID2
 	HAL_FDCAN_ConfigFilter(_instance->can_handle,&can_filter_conf);
     HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_REJECT, FDCAN_REJECT, FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
@@ -59,12 +59,12 @@ static void CANServiceInit()
 {
     HAL_FDCAN_Start(&hfdcan1);
     HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
-    HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO1_NEW_MESSAGE,0);
+    //HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO1_NEW_MESSAGE,0);
     HAL_FDCAN_Start(&hfdcan2);
-    HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
+    //HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
     HAL_FDCAN_ActivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO1_NEW_MESSAGE,0);
 	HAL_FDCAN_Start(&hfdcan3);
-    HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
+    //HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO0_NEW_MESSAGE,0);
     HAL_FDCAN_ActivateNotification(&hfdcan3, FDCAN_IT_RX_FIFO1_NEW_MESSAGE,0);
 }
 
