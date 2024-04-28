@@ -19,21 +19,19 @@ PIDInstance *encoder_pid;
 
 void Forward_Init()
 {
-     Encoder_Init_Config_s encoder_config = {
-        .can_init_config = {
-            .can_handle = &hfdcan2,
-        }};
-    encoder_config.can_init_config.rx_id = 0x005;
-    left_angle                     = EncoderInit(&encoder_config);
-    encoder_config.can_init_config.rx_id = 0x006;
-    forward_angle                     = EncoderInit(&encoder_config);
+    //  Encoder_Init_Config_s encoder_config; 
+    // encoder_config.can_init_config.can_handle = &hfdcan3;
+    // encoder_config.can_init_config.rx_id = 0x008;
+    // left_angle                     = EncoderInit(&encoder_config);
+    // encoder_config.can_init_config.rx_id = 0x009;
+    // forward_angle                     = EncoderInit(&encoder_config);
    
 
     // 左电机
     Motor_Init_Config_s forward_left_config = {
         .can_init_config = {
             .can_handle = &hfdcan3,
-            .tx_id      = 4,
+            .tx_id      = 2,
         },
         .controller_param_init_config = {
             
@@ -58,7 +56,7 @@ void Forward_Init()
     Motor_Init_Config_s forward_right_config = {
         .can_init_config = {
             .can_handle = &hfdcan3,
-            .tx_id      = 5,
+            .tx_id      = 3,
         },
         .controller_param_init_config = {
             

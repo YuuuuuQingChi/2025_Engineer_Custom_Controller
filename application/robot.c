@@ -17,6 +17,10 @@
 #include "lift.h"
 #include "first.h"
 #include "robot_cmd.h"
+#include "second.h"
+#include "horizontal.h"
+#include "forward.h"
+
 
 void RobotInit()
 {
@@ -26,7 +30,7 @@ void RobotInit()
     __disable_irq();
 
     BSPInit();
-    //buzzer_one_note(Do_freq, 0.1);
+   //buzzer_one_note(Do_freq, 0.1);
     RobotCMDInit();
     //BuzzerPlay(RoboMaster_You);
     //buzzer_one_note(La_freq, 1);
@@ -35,6 +39,8 @@ void RobotInit()
     Lift_Init();
     First_Stretch_Init();
     Second_Stretch_Init();
+    Horizontal_Init();
+    //Forward_Init();
     // 初始化完成,开启中断
     __enable_irq();
 }
@@ -47,4 +53,6 @@ void RobotTask()
     Lift_Task();
     First_Stretch_Task();
     Second_Stretch_Task();
+    Horizontal_Task();
+    //Forward_Task();
 }

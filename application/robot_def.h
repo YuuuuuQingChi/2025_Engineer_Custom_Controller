@@ -83,8 +83,7 @@ typedef enum {
  */
 typedef enum {
     CHASSIS_ZERO_FORCE = 0,    // 电流零输入
-    CHASSIS_ROTATE,            // 小陀螺模式
-    CHASSIS_NO_FOLLOW,         // 不跟随，允许全向平移
+    CHASSIS_WALK,
 } chassis_mode_e;
 
 
@@ -159,36 +158,43 @@ typedef struct
 
 typedef struct
 { // 一级伸出角度控制
-    float left;
-    float right;
+    float left_now;
+    float right_now;
+    float left_last;
+    float right_last;
     lift_mode_e lift_mode;
 
 } Lift_Ctrl_Cmd_s;
-// cmd发布的云台控制数据,由gimbal订阅
+
 typedef struct
 { // 一级伸出角度控制
-    float first_left;
-    float first_right;
+    float left_now;
+    float right_now;
+    float left_last;
+    float right_last;
     first_stretch_mode_e first_stretch_mode;
 
 } First_Stretch_Ctrl_Cmd_s;
 typedef struct
-{ // 一级伸出角度控制
-    float second_left;
-    float second_right;
+{ // 二级伸出角度控制
+    float left_now;
+    float right_now;
+    float left_last;
+    float right_last;
     second_stretch_mode_e second_stretch_mode;
 
 } Second_Stretch_Ctrl_Cmd_s;
+
 typedef struct
 {
     // 控制部分
-    int32_t Horizontal_MechAngle;
-    // int32_t Up_MechAngle_left;
-    // int32_t Up_MechAngle_right;
+    float Now_MechAngle;
+    float Last_MechAngle;
     Horizontal_mode_e Horizontal_mode;
     // UI部分
     //  ...
 } Horizontal_Ctrl_Cmd_s;
+
 typedef struct
 { 
    forward_mode_e Forward_mode;
@@ -231,8 +237,8 @@ typedef struct
 typedef struct
 {
     DJIMotorInstance *lift_left_speed_data,*lift_right_speed_data;
-    float new_left_encoder;
-    float new_right_encoder;
+    float new_left_angle;
+    float new_right_angle;
 
 } Lift_Upload_Data_s;
 
@@ -267,6 +273,9 @@ typedef struct
     float new_forward_angle;
 
 }Forward_Upload_Data_s; 
+
+
+
 
 #pragma pack() // 开启字节对齐,结束前面的#pragma pack(1)
 

@@ -61,22 +61,29 @@ void ChassisInit()
         .can_init_config.can_handle   = &hfdcan1,
         .controller_param_init_config = {
             .speed_PID = {
-                .Kp            = 1, // 4.5
+                .Kp            = 4.5,
                 .Ki            = 0,  // 0
-                .Kd            = 0,  // 0
-                .IntegralLimit = 0,
+                .Kd            = 0.01,  // 0
+                .IntegralLimit = 3000,
                 //@？？？这是啥
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 /////////////////////////////////////////没看懂
-                .MaxOut        = 1500,
+                .MaxOut        = 12000,
                 },
-            
+            .current_PID = {
+                .Kp            = 0.6, // 0.4
+                .Ki            = 0,   // 0
+                .Kd            = 0,
+                .IntegralLimit = 3000,
+                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                .MaxOut        = 15000,
+            },
         },
         .controller_setting_init_config = {
             .angle_feedback_source = MOTOR_FEED,
             .speed_feedback_source = MOTOR_FEED,
             .outer_loop_type       = SPEED_LOOP,
-            .close_loop_type       = SPEED_LOOP ,
+            .close_loop_type       = SPEED_LOOP | CURRENT_LOOP,
         },
         .motor_type = M3508,
     };
@@ -99,7 +106,15 @@ void ChassisInit()
 
     //referee_data = RefereeHardwareInit(&huart10); // 裁判系统初始化,会同时初始化UI
 
-    
+    //@ 工程无超电 -czh
+    // SuperCap_Init_Config_s cap_conf = {
+    //     .can_config = {
+    //         .can_handle = &hfdcan2,
+    //         .tx_id      = 0x302, // 超级电容默认接收id
+    //         .rx_id      = 0x301, // 超级电容默认发送id,注意tx和rx在其他人看来是反的
+    //     }};
+    // cap = SuperCapInit(&cap_conf); // 超级电容初始化
+
     // 发布订阅初始化,如果为双板,则需要can comm来传递消息
 #ifdef CHASSIS_BOARD
     Chassis_IMU_data = INS_Init(); // 底盘IMU初始化
@@ -184,32 +199,18 @@ void ChassisTask()
     chassis_cmd_recv = *(Chassis_Ctrl_Cmd_s *)CANCommGet(chasiss_can_comm);
 #endif // CHASSIS_BOARD
 
-    // if (chassis_cmd_recv.chassis_mode == CHASSIS_ZERO_FORCE) { // 如果出现重要模块离线或遥控器设置为急停,让电机停止
-    //     DJIMotorStop(motor_lf);
-    //     DJIMotorStop(motor_rf);
-    //     DJIMotorStop(motor_lb);
-    //     DJIMotorStop(motor_rb);
-    // } else { // 正常工作
+    if (chassis_cmd_recv.chassis_mode == CHASSIS_ZERO_FORCE) { // 如果出现重要模块离线或遥控器设置为急停,让电机停止
+        DJIMotorStop(motor_lf);
+        DJIMotorStop(motor_rf);
+        DJIMotorStop(motor_lb);
+        DJIMotorStop(motor_rb);
+    } else { // 正常工作
         DJIMotorEnable(motor_lf);
         DJIMotorEnable(motor_rf);
         DJIMotorEnable(motor_lb);
         DJIMotorEnable(motor_rb);
-    //}
-
-    // 根据控制模式设定旋转速度
-    switch (chassis_cmd_recv.chassis_mode) {
-        case CHASSIS_NO_FOLLOW: // 底盘不自动转，自旋受键位控制
-            //chassis_cmd_recv.wz = 0;
-            break;
-        // case CHASSIS_FOLLOW_GIMBAL_YAW: // 跟随云台,不单独设置pid,以误差角度平方为速度输出
-        //     chassis_cmd_recv.wz = -1.5f * chassis_cmd_recv.offset_angle * abs(chassis_cmd_recv.offset_angle);
-        //     break;
-        case CHASSIS_ROTATE: // 自旋,同时保持全向机动;当前wz维持定值,后续增加不规则的变速策略
-            chassis_cmd_recv.wz = 4000;
-            break;
-        default:
-            break;
     }
+
 
     // 根据云台和底盘的角度offset将控制量映射到底盘坐标系上
     // 底盘逆时针旋转为角度正方向;云台命令的方向以云台指向的方向为x,采用右手系(x指向正北时y在正东)

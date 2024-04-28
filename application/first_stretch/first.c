@@ -20,40 +20,38 @@ void First_Stretch_Init()
             .can_handle = &hfdcan2,
         },
         .controller_param_init_config = {
-            .speed_PID = {
-                .Kp            = 1,
+            .angle_PID = {
+                .Kp            = 100,
                 .Ki            = 0,
                 .Kd            = 0,
                 // .DeadBand      = 0.1f,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .IntegralLimit = 0,
-                .MaxOut = 15000,
+                .IntegralLimit = 3000,
+                .MaxOut = 20000,
             },
-            .angle_PID = {
-                .Kp            = 1,
+            .speed_PID = {
+                .Kp            = 0.55,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .IntegralLimit = 0,
-                .MaxOut        = 16000,
+                .IntegralLimit = 3000,
+                .MaxOut        = 10000,
             },
         },
         .controller_setting_init_config = {
             .angle_feedback_source = MOTOR_FEED,
             .speed_feedback_source = MOTOR_FEED,
             .outer_loop_type       = ANGLE_LOOP,
-            .close_loop_type       = SPEED_LOOP | ANGLE_LOOP,
+            .close_loop_type       = ANGLE_LOOP | SPEED_LOOP,
         },
         .motor_type = M3508};
     // 电机对total_angle闭环,上电时为零,会保持静止,收到遥控器数据再动
-    // right_speed_motor = DJIMotorInit(&first_stretch_right_config);
-    // left_speed_motor  = DJIMotorInit(&first_stretch_left_config);
     first_stretch_config.can_init_config.tx_id                             = 1;
-    first_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
+    first_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     left_speed_motor                                                            = DJIMotorInit(&first_stretch_config);
 
     first_stretch_config.can_init_config.tx_id                             = 2;
-    first_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
+    first_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     right_speed_motor                                                            = DJIMotorInit(&first_stretch_config);
 
     first_stretch_pub = PubRegister("first_stretch_feed", sizeof(First_Stretch_Upload_Data_s));
@@ -81,14 +79,14 @@ void First_Stretch_Task()
         default:
             break;
     }
-    DJIMotorSetRef(left_speed_motor, first_stretch_cmd_recv.first_left);
-    DJIMotorSetRef(right_speed_motor, first_stretch_cmd_recv.first_right);
+    DJIMotorSetRef(left_speed_motor, first_stretch_cmd_recv.left_now);
+    DJIMotorSetRef(right_speed_motor, first_stretch_cmd_recv.right_now);
     
 
     // // 设置反馈数据,主要是imu和yaw的ecd
     first_stretch_feedback_data.new_left_encoder  = left_speed_motor->measure.total_angle;
     first_stretch_feedback_data.new_right_encoder = right_speed_motor->measure.total_angle;
 
-    // 推送消息
+    // 推送消息-
     PubPushMessage(first_stretch_pub, (void *)&first_stretch_feedback_data);
 }

@@ -22,15 +22,15 @@ void Lift_Init()
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 15,
+                .Kp            = 250,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit =3000,
-                .MaxOut = 12000,
+                .MaxOut = 15000,
             },
             .speed_PID = {
-                .Kp            = 1,
+                .Kp            = 0.5,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
@@ -56,16 +56,17 @@ void Lift_Init()
             .tx_id      = 6,
         },
         .controller_param_init_config = {
+
             .angle_PID = {
-                .Kp            = 15,
+                .Kp            = 250,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 3000,
-                .MaxOut        = 12000,
+                .MaxOut        = 15000,
             },
             .speed_PID = {
-                .Kp            = 1,
+                .Kp            = 0.5,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
@@ -115,8 +116,8 @@ void Lift_Task()
             // DJIMotorChangeFeed(left_speed_motor, SPEED_LOOP, OTHER_FEED);
             //DJIMotorChangeFeed(lift_right_motor, ANGLE_LOOP, OTHER_FEED);
             //DJIMotorChangeFeed(right_speed_motor, SPEED_LOOP, OTHER_FEED);
-            DJIMotorSetRef(lift_left_motor, lift_cmd_recv.left); // yaw和pitch会在robot_cmd中处理好多圈和单圈
-            DJIMotorSetRef(lift_right_motor, lift_cmd_recv.right);
+            DJIMotorSetRef(lift_left_motor, lift_cmd_recv.left_now); 
+            DJIMotorSetRef(lift_right_motor, lift_cmd_recv.right_now);
             break;
         default:
             break;
@@ -124,9 +125,9 @@ void Lift_Task()
 
     
 
-    // 设置反馈数据,主要是imu和yaw的ecd
-    lift_feedback_data.new_left_encoder  = lift_left_motor->measure.total_angle;
-    lift_feedback_data.new_right_encoder = lift_right_motor->measure.total_angle;
+    
+    lift_feedback_data.new_left_angle  = lift_left_motor->measure.total_angle;
+    lift_feedback_data.new_right_angle = lift_right_motor->measure.total_angle;
 
     // 推送消息
     PubPushMessage(lift_pub, (void *)&lift_feedback_data);
