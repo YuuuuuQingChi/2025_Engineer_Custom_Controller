@@ -484,34 +484,27 @@ void auto_mode()
             switch (auto_flag)
             {
             case 1://左矿
-            while(1)
-            {
             if(second_stretch_fetch_data.new_left_angle > 0 || second_stretch_fetch_data.new_right_angle > 0)
             {
                 horizontal_cmd_send.Now_MechAngle = 0;
-            
-            if(horizontal_fetch_data.Horizontal_Movement > 0)
+            }
+            else
             {
-                break;
+                horizontal_cmd_send.Now_MechAngle  = horizontal_fetch_data.Horizontal_Movement;
             }
-            }
-            }
+            
                 break;
             case 2://中矿
-                //horizontal_cmd_send.Now_MechAngle
+                horizontal_cmd_send.Now_MechAngle = 0;
                 break;
             case 3://右矿
-            while(1)
-            {
-            if(second_stretch_fetch_data.new_left_angle > 0 || second_stretch_fetch_data.new_right_angle > 0)
+           if(second_stretch_fetch_data.new_left_angle > 0 || second_stretch_fetch_data.new_right_angle > 0)
             {
                 horizontal_cmd_send.Now_MechAngle = 0;
-            
-            if(horizontal_fetch_data.Horizontal_Movement > 0)
+            }
+            else
             {
-                break;
-            }
-            }
+                horizontal_cmd_send.Now_MechAngle  = horizontal_fetch_data.Horizontal_Movement;
             }
                 break;
             default://以防autofalg出现问题
