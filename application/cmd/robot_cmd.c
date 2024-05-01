@@ -9,6 +9,7 @@
 #include "message_center.h"
 #include "general_def.h"
 #include "dji_motor.h"
+#include "buzzer.h"
 //#include "forward.h"
 // bsp
 #include "bsp_dwt.h"
@@ -443,37 +444,66 @@ void mode_change()
             forward_cmd_send.Forward_mode = PITCH;
         }
 }
-int16_t auto_flag = 1;
+int16_t auto_decide_flag = 1,auto_confirm_flag = 0;
 void auto_mode_decide()
 {
     if((switch_is_up(rc_data[TEMP].rc.switch_right))&&switch_is_down(rc_data[TEMP].rc.switch_left))
     {
-        if((rc_data[TEMP].rc.rocker_r_ > 300 && !is_range(rc_data[LAST].rc.rocker_r_)) &&(!is_range(rc_data[TEMP].rc.rocker_l_)))
+        if((rc_data[TEMP].rc.rocker_r_ > 5 && !is_range(rc_data[LAST].rc.rocker_r_)) &&(!is_range(rc_data[TEMP].rc.rocker_l_)))
         {
-            auto_flag++;
-            if(auto_flag >= 3)
+            auto_decide_flag++;
+            if(auto_decide_flag >= 3)
             {
-                auto_flag = 3;
+                auto_decide_flag = 3;
             }
         }
-        if((rc_data[TEMP].rc.rocker_r_ < -300 && !is_range(rc_data[LAST].rc.rocker_r_)) &&(!is_range(rc_data[TEMP].rc.rocker_l_)))
+        if((rc_data[TEMP].rc.rocker_r_ < -5 && !is_range(rc_data[LAST].rc.rocker_r_)) &&(!is_range(rc_data[TEMP].rc.rocker_l_)))
         {
-            auto_flag--;
-            if(auto_flag <= 1)
+            auto_decide_flag--;
+            if(auto_decide_flag <= 1)
             {
-                auto_flag = 1;
+                auto_decide_flag = 1;
             }
         }
+        switch (auto_decide_flag)
+        {
+        case 1:
+            buzzer_one_note(Do_freq, 1);
+            break;
+        case 2:
+            buzzer_one_note(Re_freq, 1);
+            break;
+        case 3:
+            buzzer_one_note(Mi_freq, 1);
+            break;
+        }
+    }
+    
+}
+void auto_mode_confirm()
+{
+    if((rc_data[TEMP].rc.rocker_l_ > 5 || rc_data[TEMP].rc.rocker_l_ < -5) && !is_range(rc_data[LAST].rc.rocker_l_))
+    {
+        auto_confirm_flag = 1;
+    }
+    else if(((rc_data[TEMP].rc.rocker_l_ > 5 || rc_data[TEMP].rc.rocker_l_ < -5)) && ((rc_data[LAST].rc.rocker_l_ > 5 || rc_data[LAST].rc.rocker_l_ < -5)))
+    {
+        auto_confirm_flag = 0;
+    }
+    else if (((rc_data[TEMP].rc.rocker_r_ > 5 || rc_data[TEMP].rc.rocker_r_ < -5)) && ((rc_data[LAST].rc.rocker_r_ > 5 || rc_data[LAST].rc.rocker_r_ < -5)))
+    {
+        auto_confirm_flag = 0;
     }
 }
 //数值是0就是没测呢
 void auto_mode()
 {
     auto_mode_decide();
+    auto_mode_confirm();
     if((switch_is_up(rc_data[TEMP].rc.switch_right))&&switch_is_down(rc_data[TEMP].rc.switch_left))//右上左下
     {
         //取矿
-        if((rc_data[TEMP].rc.rocker_l_ > 300 || rc_data[TEMP].rc.rocker_l_ < -300) && !is_range(rc_data[LAST].rc.rocker_l_))
+        if(auto_confirm_flag == 1)
         {
             first_stretch_cmd_send.left_now = 15416;
             first_stretch_cmd_send.right_now = -15577;
@@ -481,7 +511,7 @@ void auto_mode()
             lift_cmd_send.right_now =-12907;
             second_stretch_cmd_send.right_now =-25;
             second_stretch_cmd_send.left_now = 65;
-            switch (auto_flag)
+            switch (auto_decide_flag)
             {
             case 1://左矿
             if(second_stretch_fetch_data.new_left_angle > 0 || second_stretch_fetch_data.new_right_angle > 0)
@@ -508,7 +538,7 @@ void auto_mode()
             }
                 break;
             default://以防autofalg出现问题
-            horizontal_cmd_send.Now_MechAngle = horizontal_fetch_data.Horizontal_Movement;
+                horizontal_cmd_send.Now_MechAngle = horizontal_fetch_data.Horizontal_Movement;
             break;
 
             } 
@@ -517,28 +547,28 @@ void auto_mode()
         }
     }
     //扔肚子
-    else if(((switch_is_up(rc_data[LAST].rc.switch_right))&&switch_is_down(rc_data[LAST].rc.switch_left))&&((switch_is_mid(rc_data[TEMP].rc.switch_right))&&switch_is_down(rc_data[TEMP].rc.switch_left)))//从右上左下变成右上左中
-    {
+    // else if(((switch_is_up(rc_data[LAST].rc.switch_right))&&switch_is_down(rc_data[LAST].rc.switch_left))&&((switch_is_mid(rc_data[TEMP].rc.switch_right))&&switch_is_down(rc_data[TEMP].rc.switch_left)))//从右上左下变成右上左中
+    // {
         
-        lift_cmd_send.left_now =0;
-        lift_cmd_send.right_now =0;
-        while(1)
-        {
-            horizontal_cmd_send.Now_MechAngle = 0;
-            if(horizontal_fetch_data.Horizontal_Movement < 0 ||horizontal_fetch_data.Horizontal_Movement > 0)//横移回到了二级的里面
-            {
-                second_stretch_cmd_send.left_now = 0;
-                second_stretch_cmd_send.right_now = 0;
-            }
-            if(second_stretch_fetch_data.new_left_angle<0||second_stretch_fetch_data.new_right_angle>0)//二级达到位置
-            {
-                break;
-            }
-        }
-        first_stretch_cmd_send.left_now = 0;
-        first_stretch_cmd_send.right_now = 0;
+    //     lift_cmd_send.left_now =0;
+    //     lift_cmd_send.right_now =0;
+    //     while(1)
+    //     {
+    //         horizontal_cmd_send.Now_MechAngle = 0;
+    //         if(horizontal_fetch_data.Horizontal_Movement < 0 ||horizontal_fetch_data.Horizontal_Movement > 0)//横移回到了二级的里面
+    //         {
+    //             second_stretch_cmd_send.left_now = 0;
+    //             second_stretch_cmd_send.right_now = 0;
+    //         }
+    //         if(second_stretch_fetch_data.new_left_angle<0||second_stretch_fetch_data.new_right_angle>0)//二级达到位置
+    //         {
+    //             break;
+    //         }
+    //     }
+    //     first_stretch_cmd_send.left_now = 0;
+    //     first_stretch_cmd_send.right_now = 0;
 
-    }
+    // }
 
 }
 
