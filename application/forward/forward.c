@@ -19,12 +19,12 @@ PIDInstance *encoder_pid;
 
 void Forward_Init()
 {
-    //  Encoder_Init_Config_s encoder_config; 
-    // encoder_config.can_init_config.can_handle = &hfdcan3;
-    // encoder_config.can_init_config.rx_id = 0x008;
-    // left_angle                     = EncoderInit(&encoder_config);
-    // encoder_config.can_init_config.rx_id = 0x009;
-    // forward_angle                     = EncoderInit(&encoder_config);
+    Encoder_Init_Config_s encoder_config; 
+    encoder_config.can_init_config.can_handle = &hfdcan3;
+    encoder_config.can_init_config.rx_id = 0x003;
+    left_angle                     = EncoderInit(&encoder_config);
+    // encoder_config.can_init_config.rx_id = 0x7ff;
+    // forward_angle                  = EncoderInit(&encoder_config);
    
 
     // 左电机
@@ -36,7 +36,7 @@ void Forward_Init()
         .controller_param_init_config = {
             
             .speed_PID = {
-                .Kp            = 0,
+                .Kp            = 15,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
@@ -61,12 +61,12 @@ void Forward_Init()
         .controller_param_init_config = {
             
             .speed_PID = {
-                .Kp            = 0,
+                .Kp            = 9,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 0,
-                .MaxOut        = 0,
+                .MaxOut        = 4000,
             },
         },
         .controller_setting_init_config = {
@@ -86,12 +86,12 @@ void Forward_Init()
     PID_Init_Config_s encoder_pid_config = {
         
 
-                          .Kp            = 0, // 0
+                          .Kp            = 10, // 0
                           .Ki            = 0, // 0
                           .Kd            = 0, // 0
                           .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
                           .IntegralLimit = 0,
-                          .MaxOut        = 0, // 20000
+                          .MaxOut        = 1000, // 20000
                       };
                       
     PIDInit(encoder_pid,&encoder_pid_config);

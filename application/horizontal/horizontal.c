@@ -20,7 +20,6 @@ static DJIMotorInstance *motor_Horizontal;
 
 void Horizontal_Init()
 {
-    Horizontal_cmd_recv.Horizontal_mode=HORIZONTAL_MOVE;
 
     Motor_Init_Config_s Horizontal_motor_config = {
         .can_init_config.can_handle   = &hfdcan3,
@@ -31,7 +30,7 @@ void Horizontal_Init()
                 .Kd            = 0,  // 0
                 .IntegralLimit = 3000,
                 //@？？？这是啥
-                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                //.Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 /////////////////////////////////////////没看懂
                 .MaxOut        = 18000,
                 0},
@@ -40,7 +39,7 @@ void Horizontal_Init()
                 .Ki            = 0,   // 0
                 .Kd            = 0,
                 .IntegralLimit = 3000,
-                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                //.Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .MaxOut        = 7000,
             },
         },
@@ -56,33 +55,17 @@ void Horizontal_Init()
     Horizontal_motor_config.can_init_config.tx_id                             = 4;
 
     motor_Horizontal                                                            = DJIMotorInit(&Horizontal_motor_config);
-                                                 
-    #ifdef ONE_BOARD 
-    
     Horizontal_pub = PubRegister("Horizontal_feed", sizeof(Horizontal_Upload_Data_s));
     Horizontal_sub = SubRegister("Horizontal_cmd", sizeof(Horizontal_Ctrl_Cmd_s));
-#endif 
+
 }
-
-/**
- * @brief 根据裁判系统和电容剩余容量对输出进行限制并设置电机参考值
- *
- */
-// static void LimitHorizontalOutput()
-// {
-//     DJIMotorSetRef(motor_Horizontal, Horizontal_cmd_recv.Now_MechAngle);
-// }
-
 
 /* 机器人底盘控制核心任务 */
 void Horizontal_Task()
 {
     // 后续增加没收到消息的处理(双板的情况)
     // 获取新的控制信息
-#ifdef ONE_BOARD
     SubGetMessage(Horizontal_sub, &Horizontal_cmd_recv);
-#endif
-
 switch (Horizontal_cmd_recv.Horizontal_mode) {
         case HORIZONTAL_MOVE:
         DJIMotorEnable(motor_Horizontal);

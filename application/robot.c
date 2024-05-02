@@ -30,17 +30,19 @@ void RobotInit()
     __disable_irq();
 
     BSPInit();
-   //buzzer_one_note(Do_freq, 0.1);
+  // buzzer_one_note(Do_freq, 0.1);
     RobotCMDInit();
-    //BuzzerPlay(RoboMaster_You);
-    //buzzer_one_note(La_freq, 1);
-    ChassisInit();                  
-    //buzzer_one_note(So_freq, 0.1f);
+  //BuzzerPlay(RoboMaster_You);
+   // buzzer_one_note(La_freq, 1);
+  ChassisInit();                  
+   // buzzer_one_note(So_freq, 0.1f);
     Lift_Init();
     First_Stretch_Init();
     Second_Stretch_Init();
-    Horizontal_Init();
-    //Forward_Init();
+      //  buzzer_one_note(Mi_freq, 1);
+
+   // Horizontal_Init();
+    Forward_Init();
     // 初始化完成,开启中断
     __enable_irq();
 }
@@ -51,8 +53,8 @@ void RobotTask()
     RobotCMDTask();
     ChassisTask();
     Lift_Task();
-    First_Stretch_Task();
+   First_Stretch_Task();
     Second_Stretch_Task();
-    Horizontal_Task();
-    //Forward_Task();
+    //Horizontal_Task();
+    Forward_Task();
 }

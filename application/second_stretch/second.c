@@ -23,21 +23,21 @@ void Second_Stretch_Init()
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 250,
+                .Kp            = 50,
                 .Ki            = 0,
                 .Kd            = 0,
                 // .DeadBand      = 0.1f,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 3000,
-                .MaxOut = 15000,
+                .MaxOut = 10000,
             },
             .speed_PID = {
-                .Kp            = 0.5,
+                .Kp            = 1,
                 .Ki            = 0,
                 .Kd            = 0,//0.0065,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 3000,
-                .MaxOut        = 15000,
+                .MaxOut        = 7000,
             },
         },
         .controller_setting_init_config = {                                                                                                                                                                                                                              
@@ -49,11 +49,11 @@ void Second_Stretch_Init()
         .motor_type = M3508};
     
     second_stretch_config.can_init_config.tx_id                             =3;
-    second_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
+    second_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
     left2_speed_motor                                                            = DJIMotorInit(&second_stretch_config);
 
     second_stretch_config.can_init_config.tx_id                             =4;
-    second_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
+    second_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
     right2_speed_motor                                                            = DJIMotorInit(&second_stretch_config);
 
     second_stretch_pub = PubRegister("second_stretch_feed", sizeof(Second_Stretch_Upload_Data_s));

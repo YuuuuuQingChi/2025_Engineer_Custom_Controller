@@ -21,21 +21,21 @@ void First_Stretch_Init()
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 100,
+                .Kp            = 1,
                 .Ki            = 0,
                 .Kd            = 0,
                 // .DeadBand      = 0.1f,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 3000,
-                .MaxOut = 20000,
+                .MaxOut = 10000,
             },
             .speed_PID = {
-                .Kp            = 0.55,
+                .Kp            = 1,
                 .Ki            = 0,
                 .Kd            = 0,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 3000,
-                .MaxOut        = 10000,
+                .MaxOut        = 15000,
             },
         },
         .controller_setting_init_config = {
@@ -47,11 +47,11 @@ void First_Stretch_Init()
         .motor_type = M3508};
     // 电机对total_angle闭环,上电时为零,会保持静止,收到遥控器数据再动
     first_stretch_config.can_init_config.tx_id                             = 1;
-    first_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
+    first_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
     left_speed_motor                                                            = DJIMotorInit(&first_stretch_config);
 
     first_stretch_config.can_init_config.tx_id                             = 2;
-    first_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
+    first_stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
     right_speed_motor                                                            = DJIMotorInit(&first_stretch_config);
 
     first_stretch_pub = PubRegister("first_stretch_feed", sizeof(First_Stretch_Upload_Data_s));
