@@ -206,8 +206,8 @@ typedef struct
     float final_angle;     // 最后的角度
     int8_t mode;           // pitch和roll的模式
     int8_t last_mode;
-    int16_t angel_output;
-    int16_t angel_output1;
+    float angel_output;
+    float angel_output1;
 }Forward_Ctrl_Cmd_s; 
 
 

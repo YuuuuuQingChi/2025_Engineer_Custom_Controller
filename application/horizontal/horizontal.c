@@ -40,7 +40,7 @@ void Horizontal_Init()
                 .Kd            = 0,
                 .IntegralLimit = 3000,
                 //.Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .MaxOut        = 7000,
+                .MaxOut        = 3000,
             },
         },
         .controller_setting_init_config = {

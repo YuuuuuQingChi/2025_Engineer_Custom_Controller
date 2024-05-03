@@ -72,14 +72,14 @@ const osThreadAttr_t Daemon_attributes = {
 osThreadId_t robottaskHandle;
 const osThreadAttr_t robottask_attributes = {
   .name = "robottask",
-  .stack_size = 1028 * 4,
+  .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityNormal1,
 };
 /* Definitions for startmotor */
 osThreadId_t startmotorHandle;
 const osThreadAttr_t startmotor_attributes = {
   .name = "startmotor",
-  .stack_size = 1024 * 4,
+  .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityNormal1,
 };
 

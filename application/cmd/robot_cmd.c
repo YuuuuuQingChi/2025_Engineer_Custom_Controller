@@ -16,9 +16,9 @@
 #include "bsp_log.h"
 
 //以后这块搞点宏
-#define PITCH_RUN_MODE 1
-#define ROLL_RUN_MODE 2
-#define STOP_MODE 3
+#define PITCH_RUN_MODE 2
+#define ROLL_RUN_MODE 3
+#define STOP_MODE 4
 #define Rotation_Ratio 1.5
 
 
@@ -72,6 +72,7 @@ int8_t mode;           // pitch和roll的模式
 int8_t last_mode;
 float last_angle;     // pitch的最后一次编码器角度
 float relevant_angle; // pitch和roll的相对角度
+float final_angle;
 // 动之前的roll编码器
 float roll_last_angle; // roll的最后一次编码器角度
 
@@ -87,8 +88,8 @@ void RobotCMDInit()
      second_stretch_feed_sub = SubRegister("second_stretch_feed", sizeof(Second_Stretch_Upload_Data_s));
      chassis_cmd_pub  = PubRegister("chassis_cmd", sizeof(Chassis_Ctrl_Cmd_s));
      chassis_feed_sub = SubRegister("chassis_feed", sizeof(Chassis_Upload_Data_s));
-    // forward_cmd_pub  = PubRegister("forward_cmd", sizeof(Forward_Ctrl_Cmd_s));
-    // forward_feed_sub = SubRegister("forward_feed", sizeof(Forward_Upload_Data_s));
+    forward_cmd_pub  = PubRegister("forward_cmd", sizeof(Forward_Ctrl_Cmd_s));
+     forward_feed_sub = SubRegister("forward_feed", sizeof(Forward_Upload_Data_s));
     horizontal_cmd_pub = PubRegister("Horizontal_cmd", sizeof(Horizontal_Ctrl_Cmd_s));
     horizontal_feed_sub = SubRegister("Horizontal_feed", sizeof(Horizontal_Upload_Data_s));
 
@@ -143,7 +144,7 @@ float last_horizontal_angle;
  */
 
 int is_range(int a){
-    if ((a> 5)||(a< -5)){
+    if ((a> 2)||(a< -2)){
         return 1;
     }
     else {
@@ -220,14 +221,14 @@ static void RemoteControlSet()
     if ((switch_is_up(rc_data[TEMP].rc.switch_right))&&switch_is_mid(rc_data[TEMP].rc.switch_left)) 
     {
         
-        //横移
+       //横移
         if(is_range(rc_data[TEMP].rc.rocker_r_))
         {
             horizontal_cmd_send.Now_MechAngle = rc_data[TEMP].rc.rocker_r_/660.0*50 + horizontal_fetch_data.Horizontal_Movement;
             horizontal_cmd_send.Horizontal_mode = HORIZONTAL_MOVE;
             last_horizontal_angle = horizontal_fetch_data.Horizontal_Movement;
 
-        }
+        } 
         else if(1-is_range(rc_data[TEMP].rc.rocker_r_))
         {
             horizontal_cmd_send.Now_MechAngle = last_horizontal_angle;
@@ -238,7 +239,7 @@ static void RemoteControlSet()
         
 
         //前端
-        control_forward();
+        //control_forward();
       
 
     }
@@ -409,7 +410,7 @@ static void MouseKeySet()
 void mode_change();
 void control_forward()
 {
-    //last_mode = mode;
+    last_mode = mode;
     mode_change();
     if (mode ==PITCH_RUN_MODE) //pitch
     {
@@ -426,8 +427,8 @@ void control_forward()
     if (mode != ROLL_RUN_MODE) {
         roll_last_angle = forward_fetch_data.new_forward_angle;
     }
-    forward_cmd_send.final_angle  = rc_data[TEMP].rc.rocker_l_ + rc_data[TEMP].rc.rocker_r1 + last_angle - relevant_angle; 
-    forward_cmd_send.angel_output = PIDCalculate(encoder_pid, forward_fetch_data.new_left_angle,forward_cmd_send.final_angle);
+    final_angle  = rc_data[TEMP].rc.rocker_l_/660.0*30 - rc_data[TEMP].rc.rocker_r1/660.0*30 + last_angle - relevant_angle; 
+    forward_cmd_send.angel_output = PIDCalculate(encoder_pid, forward_fetch_data.new_left_angle,final_angle);
 
     if (mode == ROLL_RUN_MODE) {
         forward_cmd_send.angel_output1 = -forward_cmd_send.angel_output;
@@ -446,9 +447,11 @@ void mode_change()
         } else if (is_range(rc_data[TEMP].rc.rocker_l_)&&!is_range(rc_data[TEMP].rc.rocker_r1)) {
             mode = ROLL_RUN_MODE;
             forward_cmd_send.Forward_mode = ROLL;
-        } else if (!is_range(rc_data[TEMP].rc.rocker_l_)&&!is_range(rc_data[TEMP].rc.rocker_r1)) {
-            mode = STOP_MODE;
-            forward_cmd_send.Forward_mode = PITCH;
+        } 
+        else
+        {
+            mode = ROLL_RUN_MODE;
+            mode = 5;
         }
 }
 
@@ -456,65 +459,81 @@ void mode_change()
 
 
 int16_t auto_decide_flag = 1,auto_confirm_flag = 0;
+int flag_r1,flag_r2,flag_r3,flag_r4;//数据小心会溢出
+int confirm_flag;
 void auto_mode_decide()
 {
+    
+    
     if((switch_is_up(rc_data[TEMP].rc.switch_right))&&switch_is_down(rc_data[TEMP].rc.switch_left))
     {
-        if((rc_data[TEMP].rc.rocker_r_ > 5 && !is_range(rc_data[LAST].rc.rocker_r_)) &&(!is_range(rc_data[TEMP].rc.rocker_l_)))
+        if (rc_data[TEMP].rc.rocker_r_ >= 200 && (!is_range(rc_data[TEMP].rc.rocker_l_)))
         {
-            auto_decide_flag++;
-            if(auto_decide_flag >= 3)
-            {
-                auto_decide_flag = 3;
-            }
+        flag_r1++;
         }
-        if((rc_data[TEMP].rc.rocker_r_ < -5 && !is_range(rc_data[LAST].rc.rocker_r_)) &&(!is_range(rc_data[TEMP].rc.rocker_l_)))
+        else if(!is_range(rc_data[TEMP].rc.rocker_r_))
         {
-            auto_decide_flag--;
-            if(auto_decide_flag <= 1)
-            {
-                auto_decide_flag = 1;
-            }
+        flag_r1 = 0;
         }
-        switch (auto_decide_flag)
+        if (rc_data[TEMP].rc.rocker_r_ <= -200 && (!is_range(rc_data[TEMP].rc.rocker_l_)))
         {
-        case 1:
-            buzzer_one_note(Do_freq, 1);
-            break;
-        case 2:
-            buzzer_one_note(Re_freq, 1);
-            break;
-        case 3:
-            buzzer_one_note(Mi_freq, 1);
-            break;
+        flag_r2++;
         }
+        else if(!is_range(rc_data[TEMP].rc.rocker_r_))
+        {
+        flag_r2 = 0;
+        }
+        if (rc_data[TEMP].rc.rocker_r1 >= 200 && (!is_range(rc_data[TEMP].rc.rocker_l_)))
+        {
+        flag_r3++;
+        }
+        else if(!is_range(rc_data[TEMP].rc.rocker_r1))
+        {
+        flag_r3 = 0;
+        }
+        if(flag_r1 > 200)
+        {
+            auto_decide_flag = 1;//左矿
+            
+        }
+        else if(flag_r2 > 200)
+        {
+            auto_decide_flag = 2;//中矿
+        }
+        else if(flag_r3 > 200)
+        {
+            auto_decide_flag = 3;//右矿
+            
+        }
+        else if(flag_r4 > 200)
+        {
+            auto_decide_flag = 4;
+            
+        }
+       
     }
     
 }
-void auto_mode_confirm()
-{
-    if((rc_data[TEMP].rc.rocker_l_ > 5 || rc_data[TEMP].rc.rocker_l_ < -5) && !is_range(rc_data[LAST].rc.rocker_l_))
-    {
-        auto_confirm_flag = 1;
-    }
-    else if(((rc_data[TEMP].rc.rocker_l_ > 5 || rc_data[TEMP].rc.rocker_l_ < -5)) && ((rc_data[LAST].rc.rocker_l_ > 5 || rc_data[LAST].rc.rocker_l_ < -5)))
-    {
-        auto_confirm_flag = 1;
-    }
-    else if (((rc_data[TEMP].rc.rocker_r_ > 5 || rc_data[TEMP].rc.rocker_r_ < -5)) && ((rc_data[LAST].rc.rocker_r_ > 5 || rc_data[LAST].rc.rocker_r_ < -5)))
-    {
-        auto_confirm_flag = 0;
-    }
-}
+// void auto_mode_confirm()
+// {
+//     if((rc_data[TEMP].rc.rocker_l_ > 2 || rc_data[TEMP].rc.rocker_l_ < -2) && !is_range(rc_data[LAST].rc.rocker_l_))
+//     {
+//         auto_confirm_flag = 0;
+//     }
+//     else if (((rc_data[TEMP].rc.rocker_r_ > 2 || rc_data[TEMP].rc.rocker_r_ < -2)) && ((rc_data[LAST].rc.rocker_r_ > 2|| rc_data[LAST].rc.rocker_r_ < -2)))
+//     {
+//         auto_confirm_flag = 1;
+//     }
+// }
 //数值是0就是没测呢
 void auto_mode()
 {
     auto_mode_decide();
-    auto_mode_confirm();
+    //auto_mode_confirm();
     if((switch_is_up(rc_data[TEMP].rc.switch_right))&&switch_is_down(rc_data[TEMP].rc.switch_left))//右上左下
     {
         //取矿
-        if(auto_confirm_flag == 1)
+        if(rc_data[TEMP].rc.rocker_l_ > 2 || rc_data[TEMP].rc.rocker_l_ < -2)
         {
             first_stretch_cmd_send.left_now = 15416;
             first_stretch_cmd_send.right_now = -15577;
@@ -525,9 +544,9 @@ void auto_mode()
             switch (auto_decide_flag)
             {
             case 1://左矿
-            if(second_stretch_fetch_data.new_left_angle > 0 || second_stretch_fetch_data.new_right_angle > 0)
+            if(second_stretch_fetch_data.new_left_angle > -5900 || second_stretch_fetch_data.new_right_angle < 6300)
             {
-                horizontal_cmd_send.Now_MechAngle = 0;
+                horizontal_cmd_send.Now_MechAngle = -13262;
             }
             else
             {
@@ -536,12 +555,12 @@ void auto_mode()
             
                 break;
             case 2://中矿
-                horizontal_cmd_send.Now_MechAngle = 0;
+                horizontal_cmd_send.Now_MechAngle = 27;
                 break;
             case 3://右矿
-           if(second_stretch_fetch_data.new_left_angle > 0 || second_stretch_fetch_data.new_right_angle > 0)
+           if(second_stretch_fetch_data.new_left_angle > -5900 || second_stretch_fetch_data.new_right_angle < 6300)
             {
-                horizontal_cmd_send.Now_MechAngle = 0;
+                horizontal_cmd_send.Now_MechAngle = 11696;
             }
             else
             {
@@ -593,21 +612,21 @@ void RobotCMDTask()
     SubGetMessage(first_stretch_feed_sub, (void *)&first_stretch_fetch_data);
     SubGetMessage(second_stretch_feed_sub, (void *)&second_stretch_fetch_data);
     SubGetMessage(forward_feed_sub, (void *)&forward_fetch_data);
-   // SubGetMessage(horizontal_feed_sub, (void *)&horizontal_fetch_data);
+    SubGetMessage(horizontal_feed_sub, (void *)&horizontal_fetch_data);
     
        //遥控器左下右中，切换为电脑模式
     //遥控器其余状态为遥控器模式
-    if (switch_is_down(rc_data[TEMP].rc.switch_left)&&switch_is_mid(rc_data[TEMP].rc.switch_right)){
-        MouseKeySet();
-   }
-   else {
+//     if (switch_is_down(rc_data[TEMP].rc.switch_left)&&switch_is_mid(rc_data[TEMP].rc.switch_right)){
+//         MouseKeySet();
+//    }
+//    else {
     RemoteControlSet();
-    //auto_mode();
-   }
+    auto_mode();
+   //}
    PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
    PubPushMessage(lift_cmd_pub, (void *)&lift_cmd_send);
    PubPushMessage(first_stretch_cmd_pub, (void *)&first_stretch_cmd_send);
    PubPushMessage(second_stretch_cmd_pub, (void *)&second_stretch_cmd_send);
    PubPushMessage(forward_cmd_pub, (void *)&forward_cmd_send);
-   //PubPushMessage(horizontal_cmd_pub, (void *)&horizontal_cmd_send);
+   PubPushMessage(horizontal_cmd_pub, (void *)&horizontal_cmd_send);
 }
