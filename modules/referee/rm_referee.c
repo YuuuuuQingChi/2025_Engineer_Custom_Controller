@@ -22,7 +22,7 @@
 
 static USARTInstance *referee_usart_instance; // 裁判系统串口实例
 static DaemonInstance *referee_daemon;		  // 裁判系统守护进程
-static referee_info_t referee_info;			  // 裁判系统数据
+referee_info_t referee_info;			  // 裁判系统数据
 
 /**
  * @brief  读取裁判数据,中断中读取保证速度

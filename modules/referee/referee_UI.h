@@ -69,4 +69,6 @@ void UIGraphRefresh(referee_id_t *_id, int cnt, ...);
 
 void UICharRefresh(referee_id_t *_id, String_Data_t string_Data);
 
+void My_UIGraphRefresh();
+
 #endif

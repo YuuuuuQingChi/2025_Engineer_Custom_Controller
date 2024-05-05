@@ -17,6 +17,7 @@
 #include "stdint.h"
 #include "dji_motor.h"
 #include "encoder.h"
+#include "servo_motor.h"
 
 /* 开发板类型定义,烧录时注意不要弄错对应功能;修改定义后需要重新编译,只能存在一个定义! */
 #define ONE_BOARD // 单板控制整车
@@ -166,6 +167,11 @@ typedef struct
 
 } Lift_Ctrl_Cmd_s;
 
+typedef struct 
+{
+    float now_angel;
+}Servo_Cmd_s;
+
 typedef struct
 { // 一级伸出角度控制
     float left_now;
@@ -258,6 +264,11 @@ typedef struct
 
 }Second_Stretch_Upload_Data_s; 
 
+typedef struct 
+{
+    ServoInstance *Pitch_Motor,*Yaw_Motor;
+}Servo_Upload_Data_s;
+
 typedef struct
 {
 #if defined(CHASSIS_BOARD) || defined(GIMBAL_BOARD) 
@@ -267,6 +278,7 @@ typedef struct
     float Horizontal_Movement; //暂定左正右负
     float now_angel;
 } Horizontal_Upload_Data_s;
+
 typedef struct
 { 
    float new_left_angle;

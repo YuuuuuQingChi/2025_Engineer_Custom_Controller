@@ -20,7 +20,7 @@
 #include "second.h"
 #include "horizontal.h"
 #include "forward.h"
-
+#include "referee_UI.h"
 
 void RobotInit()
 {
@@ -49,7 +49,6 @@ void RobotInit()
 
 void RobotTask()
 {
-    
     RobotCMDTask();
     //ChassisTask();
     Lift_Task();
@@ -57,4 +56,5 @@ void RobotTask()
     Second_Stretch_Task();
     Horizontal_Task();
     Forward_Task();
+    //My_UIGraphRefresh();
 }
