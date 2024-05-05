@@ -21,7 +21,7 @@
 #define STOP_MODE 4
 #define Rotation_Ratio 1.5
 
-
+//111
 
 /* cmd应用包含的模块实例指针和交互信息存储*/
 #ifdef GIMBAL_BOARD // 对双板的兼容,条件编译
