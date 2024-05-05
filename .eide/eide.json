@@ -115,8 +115,7 @@
           "USB_DEVICE/App",
           "USB_DEVICE/Target",
           "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
-          "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
-          "application/servo"
+          "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",

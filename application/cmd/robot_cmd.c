@@ -24,11 +24,7 @@
 
 
 /* cmd应用包含的模块实例指针和交互信息存储*/
-#ifdef GIMBAL_BOARD // 对双板的兼容,条件编译
-#include "can_comm.h"
-static CANCommInstance *cmd_can_comm; // 双板通信
-#endif
-#ifdef ONE_BOARD
+
 static Publisher_t *chassis_cmd_pub;   // 底盘控制消息发布者
 static Subscriber_t *chassis_feed_sub; // 底盘反馈信息订阅者
 
@@ -165,7 +161,6 @@ int is_range(int a)
  *
  */
 void control_forward();
-void auto_small_resource_island();
 
 float last_first_right_angle, last_first_left_angle;
 float last_second_right_angle, last_second_left_angle;
@@ -265,7 +260,6 @@ static void RemoteControlSet()
         }
         //前端
         // control_forward();
-        // mode_record();
 
     }
 
@@ -490,15 +484,27 @@ void mode_change()
  *
  */
 
-int16_t auto_decide_flag = 1,auto_confirm_flag = 0;
-int flag_r1,flag_r2,flag_r3,flag_r4;//数据小心会溢出
-int confirm_flag;
+int16_t auto_decide_flag = 1, auto_confirm_flag = 0;
+int16_t flag_r1, flag_r2, flag_r3, flag_r4; // 数据小心会溢出
+void auto_mode_decide(); // 自动模式选择函数
+void Put_it_back_in_the_silo();//放回矿仓
+
+void auto_mode() // 自动模式最终函数
+{
+    
+    if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)) // 右上左下
+    {
+        auto_mode_decide();
+        if (rc_data[TEMP].rc.rocker_l_ > 200 || rc_data[TEMP].rc.rocker_l_ < -200) {
+            auto_small_resource_island();// 取小资源岛
+            Put_it_back_in_the_silo();
+        }
+    }
+}
+
 void auto_mode_decide()
 {
     
-    
-    if((switch_is_up(rc_data[TEMP].rc.switch_right))&&switch_is_down(rc_data[TEMP].rc.switch_left))
-    {
         if (rc_data[TEMP].rc.rocker_r_ >= 200 && (!is_range(rc_data[TEMP].rc.rocker_l_)))
         {
         flag_r1++;
@@ -533,10 +539,9 @@ void auto_mode_decide()
         } else if (flag_r4 > 100) {
             auto_decide_flag = 4; // 收回矿仓
         }
-    }
 }
 
-void auto_small_resource_island()
+void auto_small_resource_island()//取小资源岛
 {
     horizontal_cmd_send.Horizontal_mode = HORIZONTAL_MOVE;
     first_stretch_cmd_send.left_now     = 15416;
@@ -568,7 +573,7 @@ void auto_small_resource_island()
             break;
     }
 }
-void Put_it_back_in_the_silo()
+void Put_it_back_in_the_silo()//放回矿仓
 {
     horizontal_cmd_send.Now_MechAngle = 27;
     
@@ -583,6 +588,9 @@ void Put_it_back_in_the_silo()
     lift_cmd_send.left_now            = 7895;
     lift_cmd_send.right_now           = -8019;
 }
+
+
+
 
 /**
  * @brief CMD核心任务
