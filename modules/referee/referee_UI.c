@@ -13,6 +13,23 @@
 #include "crc_ref.h"
 #include "stdio.h"
 #include "rm_referee.h"
+#include "message_center.h"
+
+extern referee_info_t referee_info;                         // 裁判系统数据
+extern Referee_Interactive_info_t Referee_Interactive_info; // 绘制UI所需的数据
+
+uint8_t UI_Seq;                           // 包序号，供整个referee文件使用
+static Graph_Data_t UI_shoot_dot[10];     // 射击准线
+static Graph_Data_t UI_Deriction_line[4]; // 射击准线
+static Graph_Data_t UI_Energy[3];         // 电容能量条
+Graph_Data_t UI_Rectangle[10];     // 矩形
+static Graph_Data_t UI_Circle_t[10];      // 圆形
+static Graph_Data_t UI_Arco_t[10];        // 圆弧
+static Graph_Data_t UI_Number_t[10];      // 数字
+static String_Data_t UI_State_sta[10];    // 机器人状态,静态只需画一次
+// static String_Data_t UI_State_dyn[6];							// 机器人状态,动态先add才能change
+
+static Subscriber_t *gimbal_feed_sub;          // 云台反馈信息订阅者
 
 // 包序号
 /********************************************删除操作*************************************
@@ -421,4 +438,70 @@ void UICharRefresh(referee_id_t *_id, String_Data_t string_Data)
 	RefereeSend((uint8_t *)&UI_CharReFresh_data, LEN_HEADER + LEN_CMDID + temp_datalength + LEN_TAIL); // 发送
 
 	UI_Seq++; // 包序号+1
+}
+
+/**
+ * @brief  判断各种ID，选择客户端ID
+ * @param  referee_info_t *referee_info
+ * @retval none
+ * @attention
+ */
+static void DeterminRobotID()
+{
+    // id小于7是红色,大于7是蓝色,0为红色，1为蓝色   #define Robot_Red 0    #define Robot_Blue 1
+    referee_info.referee_id.Robot_Color       = referee_info.GameRobotState.robot_id > 7 ? Robot_Blue : Robot_Red;
+    referee_info.referee_id.Cilent_ID         = 0x0100 + referee_info.GameRobotState.robot_id; // 计算客户端ID
+    referee_info.referee_id.Robot_ID          = referee_info.GameRobotState.robot_id;          // 计算机器人ID
+    referee_info.referee_id.Receiver_Robot_ID = 0;
+}
+
+
+void My_UIGraphRefresh()
+{
+    DeterminRobotID();
+
+    // const float arc = 45.0f; // 弧长
+    // const uint16_t Mechangle_offset = 10546;
+    // float mid_point_angle = fmod(720.0f - (yaw_angle - YAW_CHASSIS_ALIGN_ECD) * (360.0f / 8192.0f), 360.0f);
+    // float angle_start = fmod(mid_point_angle + 360.0f - arc / 2.0f, 360.0f);
+    // float angle_end = fmod(mid_point_angle + arc / 2.0f, 360.0f);
+
+        // 清空UI          GameRobotState
+        UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 9);
+        UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 8);
+        UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 7);
+        UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 6);
+
+        UILineDraw(&UI_Deriction_line[0], "sq0", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30 + 30, SCREEN_WIDTH / 2 - 55, SCREEN_LENGTH / 2 - 30 + 5, SCREEN_WIDTH / 2 - 55);
+        UILineDraw(&UI_Deriction_line[1], "sq1", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 + 30, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 + 5);
+        UILineDraw(&UI_Deriction_line[2], "sq2", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30 - 5, SCREEN_WIDTH / 2 - 55, SCREEN_LENGTH / 2 - 30 - 30, SCREEN_WIDTH / 2 - 55);
+        UILineDraw(&UI_Deriction_line[3], "sq3", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 - 5, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 - 30);
+    
+        UICircleDraw(&UI_Circle_t[0], "sc0", UI_Graph_ADD, 9, UI_Color_White, 20, 700, 160, 8);
+     
+        UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_ADD, 9, UI_Color_White, 20, 1180, 160, 8);  // 摩擦轮是否开启显示
+        UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_ADD, 9, UI_Color_Orange, 20, 1280, 160, 8); // 摩擦轮是否正常显示
+    
+        UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_ADD, 9, UI_Color_White, 20, 580, 160, 8);
+
+        sprintf(UI_State_sta[3].show_Data, "SuperCap");
+        UICharDraw(&UI_State_sta[3], "ss3", UI_Graph_ADD, 9, UI_Color_Yellow, 20, 2, 80, 800, "SuperCap");
+        UICharRefresh(&referee_info.referee_id, UI_State_sta[3]);
+        UIRectangleDraw(&UI_Rectangle[1], "sr1", UI_Graph_ADD, 9, UI_Color_White, 4, 80, 710, 280, 730);
+        
+        sprintf(UI_State_sta[4].show_Data, "Pitch");
+        UICharDraw(&UI_State_sta[4], "ss4", UI_Graph_ADD, 9, UI_Color_Yellow, 20, 2, 300, 700, "Pitch");
+        UICharRefresh(&referee_info.referee_id, UI_State_sta[4]);
+
+        //UIFloatDraw(&UI_Number_t[0], "sm1", UI_Graph_ADD, 9, UI_Color_Yellow, 20, 5, 3, 300 + 100, 700, Pitch_Angle * 1000);
+
+        // 射击准点
+        UIGraphRefresh(&referee_info.referee_id, 7, UI_Deriction_line[0], UI_Deriction_line[1], UI_Deriction_line[2], UI_Deriction_line[3], UI_State_sta[0], UI_State_sta[2], UI_State_sta[4]);
+        UIGraphRefresh(&referee_info.referee_id, 2, UI_State_sta[5], UI_Rectangle[1]);
+        // 将位置标定线，小陀螺，弹舱盖，摩擦轮，电容一共7个图形打包一块发
+        UIGraphRefresh(&referee_info.referee_id, 5, UI_Deriction_line[0], UI_Deriction_line[1], UI_Circle_t[0], UI_Circle_t[1], UI_Circle_t[2]);
+        // UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[0],UI_Circle_t[2],UI_Circle_t[3],UI_Rectangle[1],&UI_Energy[1]);
+        UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[0], UI_Circle_t[2], UI_Circle_t[3], UI_Circle_t[4], UI_Energy[1]);
+        UIGraphRefresh(&referee_info.referee_id, 1, UI_Number_t[0]);
+
 }

@@ -104,7 +104,7 @@ void ChassisInit()
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_rb                                                               = DJIMotorInit(&chassis_motor_config);
 
-    //referee_data = RefereeHardwareInit(&huart10); // 裁判系统初始化,会同时初始化UI
+    referee_data = RefereeHardwareInit(&huart10); // 裁判系统初始化,会同时初始化UI
 
     //@ 工程无超电 -czh
     // SuperCap_Init_Config_s cap_conf = {
