@@ -35,9 +35,9 @@ void Horizontal_Init()
                 .MaxOut        = 18000,
                 0},
             .speed_PID = {
-                .Kp            = 0.4, // 0.4
+                .Kp            = 0.35, // 0.4
                 .Ki            = 0,   // 0
-                .Kd            = 0,
+                .Kd            = 0.01,
                 .IntegralLimit = 3000,
                 //.Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .MaxOut        = 3000,

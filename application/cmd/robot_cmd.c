@@ -163,17 +163,17 @@ static void RemoteControlSet()
     if ((switch_is_up(rc_data[TEMP].rc.switch_right))&&switch_is_up(rc_data[TEMP].rc.switch_left)) {
         if(is_range(rc_data[TEMP].rc.rocker_l1)||is_range(rc_data[TEMP].rc.rocker_l_)||is_range(rc_data[TEMP].rc.rocker_r_)){
             chassis_cmd_send.chassis_mode=CHASSIS_WALK;
-            chassis_cmd_send.vx = -rc_data[TEMP].rc.rocker_l_*15; // 系数待测
-            chassis_cmd_send.vy = -rc_data[TEMP].rc.rocker_l1*15;
-            chassis_cmd_send.wz =-rc_data[TEMP].rc.rocker_r_*5;
+            chassis_cmd_send.vx = -rc_data[TEMP].rc.rocker_l_*20; // 系数待测
+            chassis_cmd_send.vy = -rc_data[TEMP].rc.rocker_l1*20;
+            chassis_cmd_send.wz =-rc_data[TEMP].rc.rocker_r_*15;
         }
 
 
         if(is_range(rc_data[TEMP].rc.rocker_r1))
         {
             lift_cmd_send.lift_mode = LIFT;
-            lift_cmd_send.left_now += rc_data[TEMP].rc.rocker_r1/60.0;
-            lift_cmd_send.right_now -= rc_data[TEMP].rc.rocker_r1/60.0;
+            lift_cmd_send.left_now += rc_data[TEMP].rc.rocker_r1/20.0;
+            lift_cmd_send.right_now -= rc_data[TEMP].rc.rocker_r1/20.0;
             lift_cmd_send.left_last=lift_cmd_send.left_now;
             lift_cmd_send.right_last=lift_cmd_send.right_now;
         }
@@ -183,43 +183,35 @@ static void RemoteControlSet()
     // 右侧开关状态[中],左侧开关状态[中]
     if ((switch_is_mid(rc_data[TEMP].rc.switch_right))&&switch_is_mid(rc_data[TEMP].rc.switch_left)) 
     {
-         //一级伸出 yaw 
+        //一级伸出 yaw 
         if(1-is_range(rc_data[TEMP].rc.rocker_l_)&&(is_range(rc_data[TEMP].rc.rocker_r1)))
         {
             first_stretch_cmd_send.first_stretch_mode = FIRST_STRETCH;
-            first_stretch_cmd_send.left_now = -rc_data[TEMP].rc.rocker_r1/660.0*15000 + first_stretch_fetch_data.new_left_encoder;
-            first_stretch_cmd_send.right_now = rc_data[TEMP].rc.rocker_r1/660.0*15000 + first_stretch_fetch_data.new_right_encoder;
-            last_first_right_angle =first_stretch_fetch_data.new_right_encoder; 
-            last_first_left_angle = first_stretch_fetch_data.new_left_encoder;
+            first_stretch_cmd_send.left_now -= rc_data[TEMP].rc.rocker_r1/10.0;
+            first_stretch_cmd_send.right_now+=rc_data[TEMP].rc.rocker_r1/10.0;
+            first_stretch_cmd_send.right_last=first_stretch_cmd_send.right_now;
+            first_stretch_cmd_send.left_last=first_stretch_cmd_send.left_now;
         }
-        else if (1-is_range(rc_data[TEMP].rc.rocker_r1)&&(is_range(rc_data[TEMP].rc.rocker_l_)))
+        else
         {
-            first_stretch_cmd_send.first_stretch_mode = FIRST_YAW;
-            first_stretch_cmd_send.left_now= -rc_data[TEMP].rc.rocker_l_/660.0*15000 + first_stretch_fetch_data.new_left_encoder;
-            first_stretch_cmd_send.right_now = -rc_data[TEMP].rc.rocker_l_/660.0*15000 + first_stretch_fetch_data.new_right_encoder;
-            last_first_right_angle =first_stretch_fetch_data.new_right_encoder; 
-            last_first_left_angle = first_stretch_fetch_data.new_left_encoder;
-        }
-        else if (1-is_range(rc_data[TEMP].rc.rocker_r1)&&(1 - is_range(rc_data[TEMP].rc.rocker_l_)))
-        {
-            first_stretch_cmd_send.left_now = last_first_left_angle;
-            first_stretch_cmd_send.right_now = last_first_right_angle;
+            first_stretch_cmd_send.right_now=first_stretch_cmd_send.right_last;
+            first_stretch_cmd_send.left_now=first_stretch_cmd_send.left_last;
         }
     
-       //二级伸出 
+        //二级伸出 
         if(is_range(rc_data[TEMP].rc.rocker_l1))
         {
             second_stretch_cmd_send.second_stretch_mode = SECOND_STRETCH;
-            second_stretch_cmd_send.left_now = rc_data[TEMP].rc.rocker_l1/660.0 * 100 + second_stretch_fetch_data.new_left_angle;
-            second_stretch_cmd_send.right_now = -rc_data[TEMP].rc.rocker_l1/660.0 * 100 + second_stretch_fetch_data.new_right_angle;
-            last_second_right_angle = second_stretch_fetch_data.new_right_angle; 
-            last_second_left_angle = second_stretch_fetch_data.new_left_angle;
+            second_stretch_cmd_send.left_now += rc_data[TEMP].rc.rocker_l1/23.0;
+            second_stretch_cmd_send.right_now -= rc_data[TEMP].rc.rocker_l1/23.0;
+            second_stretch_cmd_send.right_last=second_stretch_cmd_send.right_now;
+            second_stretch_cmd_send.left_last=second_stretch_cmd_send.left_now;
         }
         
         else if(1-is_range(rc_data[TEMP].rc.rocker_l1))
         {
-            second_stretch_cmd_send.left_now = last_second_left_angle;
-            second_stretch_cmd_send.right_now = last_second_right_angle;
+            second_stretch_cmd_send.right_now=second_stretch_cmd_send.right_last;
+            second_stretch_cmd_send.left_now=second_stretch_cmd_send.left_last;
         }
     
     } 
@@ -227,27 +219,41 @@ static void RemoteControlSet()
     // 右侧开关状态[上],左侧开关状态[中]
     if ((switch_is_up(rc_data[TEMP].rc.switch_right))&&switch_is_mid(rc_data[TEMP].rc.switch_left)) 
     {
-        
-       //横移
+        //横移
         if(is_range(rc_data[TEMP].rc.rocker_r_))
         {
-            horizontal_cmd_send.Now_MechAngle = rc_data[TEMP].rc.rocker_r_/660.0*50 + horizontal_fetch_data.Horizontal_Movement;
-            horizontal_cmd_send.Horizontal_mode = HORIZONTAL_MOVE;
-            last_horizontal_angle = horizontal_fetch_data.Horizontal_Movement;
-
-        } 
-        else if(1-is_range(rc_data[TEMP].rc.rocker_r_))
+            horizontal_cmd_send.Now_MechAngle += rc_data[TEMP].rc.rocker_r_/60.0;
+            horizontal_cmd_send.Last_MechAngle = horizontal_cmd_send.Now_MechAngle;
+        }
+        else if(1 - is_range(rc_data[TEMP].rc.rocker_r_))
         {
-            horizontal_cmd_send.Now_MechAngle = last_horizontal_angle;
-            horizontal_cmd_send.Horizontal_mode = HORIZONTAL_MOVE;
-
+            horizontal_cmd_send.Now_MechAngle =  horizontal_cmd_send.Last_MechAngle ;
         }
 
-        
+         if (1-is_range(rc_data[TEMP].rc.rocker_r1)&&(is_range(rc_data[TEMP].rc.rocker_l_)))
+        {
+            first_stretch_cmd_send.first_stretch_mode = FIRST_YAW;
+            first_stretch_cmd_send.left_now -= rc_data[TEMP].rc.rocker_l_/10.0;
+            first_stretch_cmd_send.right_now-= rc_data[TEMP].rc.rocker_l_/10.0;
+            first_stretch_cmd_send.right_last=first_stretch_cmd_send.right_now;
+            first_stretch_cmd_send.left_last=first_stretch_cmd_send.left_now;
+        }
+        else
+        {
+            first_stretch_cmd_send.right_now=first_stretch_cmd_send.right_last;
+            first_stretch_cmd_send.left_now=first_stretch_cmd_send.left_last;
+        }
 
+        if (is_range(rc_data[TEMP].rc.dial)){
+            HAL_GPIO_WritePin(GPIOE,GPIO_PIN_14,1);
+            
+        }else{
+            HAL_GPIO_WritePin(GPIOE,GPIO_PIN_14,0 );
+
+        }
         //前端
-        //control_forward();
-      
+        // control_forward();
+        // mode_record();
 
     }
 
@@ -281,24 +287,25 @@ static void RemoteControlSet()
     
     //差个升降的限位，上车测数据再说
     //以上是升降的控制逻辑
-    // lift_cmd_send.left_now=lift_cmd_send.left_last;
-    // lift_cmd_send.right_now=lift_cmd_send.right_last;
-    // lift_cmd_send.left_now=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);    
-    // lift_cmd_send.right_now=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
-    // lift_cmd_send.left_last=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);    
-    // lift_cmd_send.right_last=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
+    lift_cmd_send.left_now=lift_cmd_send.left_last;
+    lift_cmd_send.right_now=lift_cmd_send.right_last;
+    lift_cmd_send.left_now=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);    
+    lift_cmd_send.right_now=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
+    lift_cmd_send.left_last=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);    
+    lift_cmd_send.right_last=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
 
-    // first_stretch_cmd_send.left_now=Limit_Set(first_stretch_cmd_send.left_now,24000,-38000);    
-    // first_stretch_cmd_send.right_now=Limit_Set(first_stretch_cmd_send.right_now,STRETCH_1_MAX_ANGLE_RIGHT,STRETCH_1_MIN_ANGLE_RIGHT);
-    // first_stretch_cmd_send.left_last=Limit_Set(first_stretch_cmd_send.left_now,24000,-38000);    
-    // first_stretch_cmd_send.right_last=Limit_Set(first_stretch_cmd_send.right_now,STRETCH_1_MAX_ANGLE_RIGHT,STRETCH_1_MIN_ANGLE_RIGHT);
+    first_stretch_cmd_send.left_now=Limit_Set(first_stretch_cmd_send.left_now,24000,-38000);    
+    first_stretch_cmd_send.right_now=Limit_Set(first_stretch_cmd_send.right_now,STRETCH_1_MAX_ANGLE_RIGHT,STRETCH_1_MIN_ANGLE_RIGHT);
+    first_stretch_cmd_send.left_last=Limit_Set(first_stretch_cmd_send.left_now,24000,-38000);    
+    first_stretch_cmd_send.right_last=Limit_Set(first_stretch_cmd_send.right_now,STRETCH_1_MAX_ANGLE_RIGHT,STRETCH_1_MIN_ANGLE_RIGHT);
 
-    // second_stretch_cmd_send.left_now=Limit_Set(second_stretch_cmd_send.left_now,STRETCH_2_MAX_ANGLE_LEFT,STRETCH_2_MIN_ANGLE_LEFT);    
-    // second_stretch_cmd_send.right_now=Limit_Set(second_stretch_cmd_send.right_now,STRETCH_2_MAX_ANGLE_RIGHT,STRETCH_2_MIN_ANGLE_RIGHT);
-    // second_stretch_cmd_send.left_last=Limit_Set(second_stretch_cmd_send.left_now,STRETCH_2_MAX_ANGLE_LEFT,STRETCH_2_MIN_ANGLE_LEFT);    
-    // second_stretch_cmd_send.right_last=Limit_Set(second_stretch_cmd_send.right_now,STRETCH_2_MAX_ANGLE_RIGHT,STRETCH_2_MIN_ANGLE_RIGHT);
+    second_stretch_cmd_send.left_now=Limit_Set(second_stretch_cmd_send.left_now,STRETCH_2_MAX_ANGLE_LEFT,STRETCH_2_MIN_ANGLE_LEFT);    
+    second_stretch_cmd_send.right_now=Limit_Set(second_stretch_cmd_send.right_now,STRETCH_2_MAX_ANGLE_RIGHT,STRETCH_2_MIN_ANGLE_RIGHT);
+    second_stretch_cmd_send.left_last=Limit_Set(second_stretch_cmd_send.left_now,STRETCH_2_MAX_ANGLE_LEFT,STRETCH_2_MIN_ANGLE_LEFT);    
+    second_stretch_cmd_send.right_last=Limit_Set(second_stretch_cmd_send.right_now,STRETCH_2_MAX_ANGLE_RIGHT,STRETCH_2_MIN_ANGLE_RIGHT);
 
-    // horizontal_cmd_send.Now_MechAngle=Limit_Set(horizontal_cmd_send.Now_MechAngle,HORIZONTAL_MAX,HORIZONTAL_MIN);
+    horizontal_cmd_send.Now_MechAngle=Limit_Set(horizontal_cmd_send.Now_MechAngle,HORIZONTAL_MAX,HORIZONTAL_MIN);
+
     //气泵
         if (is_range(rc_data[TEMP].rc.dial)){
             HAL_GPIO_WritePin(GPIOE,GPIO_PIN_14,1);
@@ -468,6 +475,7 @@ void mode_change()
 int16_t auto_decide_flag = 1,auto_confirm_flag = 0;
 int flag_r1,flag_r2,flag_r3,flag_r4;//数据小心会溢出
 int confirm_flag;
+
 void auto_mode_decide()
 {
     
