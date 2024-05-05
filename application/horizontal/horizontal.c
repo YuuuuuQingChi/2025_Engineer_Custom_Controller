@@ -78,8 +78,4 @@ switch (Horizontal_cmd_recv.Horizontal_mode) {
     // 推送反馈消息
     Horizontal_feedback_data.Horizontal_Movement = motor_Horizontal->measure.total_angle;
     PubPushMessage(Horizontal_pub, (void *)&Horizontal_feedback_data);
-
-#ifdef CHASSIS_BOARD
-    CANCommSend(Horizontal_can_comm, (void *)&Horizontal_feedback_data);
-#endif // Horizontal_BOARD
 }

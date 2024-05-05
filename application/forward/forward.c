@@ -83,7 +83,7 @@ void Forward_Init()
     PID_Init_Config_s encoder_pid_config = {
         
 
-                          .Kp            = 12, // 0
+                          .Kp            = 100, // 0
                           .Ki            = 0, // 0
                           .Kd            = 0, // 0
                           .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,

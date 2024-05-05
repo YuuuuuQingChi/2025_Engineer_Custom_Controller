@@ -34,7 +34,7 @@ void RobotInit()
     RobotCMDInit();
   //BuzzerPlay(RoboMaster_You);
    // buzzer_one_note(La_freq, 1);
- ChassisInit();                  
+ //ChassisInit();                  
    // buzzer_one_note(So_freq, 0.1f);
     Lift_Init();
     First_Stretch_Init();
@@ -51,7 +51,7 @@ void RobotTask()
 {
     
     RobotCMDTask();
-    ChassisTask();
+    //ChassisTask();
     Lift_Task();
    First_Stretch_Task();
     Second_Stretch_Task();
