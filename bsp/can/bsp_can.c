@@ -5,7 +5,7 @@
 #include "bsp_dwt.h"
 #include "bsp_log.h"
 
-/* can instance ptrs storage, used for recv callback */
+
 // 在CAN产生接收中断会遍历数组,选出hfdcan和rxid与发生中断的实例相同的那个,调用其回调函数
 // @todo: 后续为每个CAN总线单独添加一个can_instance指针数组,提高回调查找的性能
 static CANInstance *can_instance[CAN_MX_REGISTER_CNT] = {NULL};
