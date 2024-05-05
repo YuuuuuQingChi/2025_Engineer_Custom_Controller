@@ -63,6 +63,11 @@ static Subscriber_t *forward_feed_sub;          // 前端反馈信息订阅者
 static Forward_Ctrl_Cmd_s forward_cmd_send;      // 传递给前端的控制信息
 static Forward_Upload_Data_s forward_fetch_data; // 从前端获取的反馈信息
 
+static Publisher_t *servo_cmd_pub;            // 升降控制消息发布者
+static Subscriber_t *servo_feed_sub;          // 升降反馈信息订阅者
+static Servo_Cmd_s servo_cmd_send;      // 传递给升降的控制信息
+static Servo_Upload_Data_s servo_fetch_data; // 从升降获取的反馈信息
+
 PC_Mode_t PC_Mode;
 extern PIDInstance *encoder_pid;
 static Robot_Status_e robot_state; // 机器人整体工作状态
@@ -93,6 +98,8 @@ void RobotCMDInit()
     horizontal_cmd_pub = PubRegister("Horizontal_cmd", sizeof(Horizontal_Ctrl_Cmd_s));
     horizontal_feed_sub = SubRegister("Horizontal_feed", sizeof(Horizontal_Upload_Data_s));
 
+    servo_cmd_pub = PubRegister("servo_cmd", sizeof(Servo_Cmd_s));
+    servo_feed_sub = SubRegister("servo_feed", sizeof(Servo_Upload_Data_s));
 
     robot_state = ROBOT_READY; // 启动时机器人进入工作模式,后续加入所有应用初始化完成之后再进入
     // chassis_cmd_send.chassis_mode=CHASSIS_WALK;
@@ -613,7 +620,7 @@ void RobotCMDTask()
     SubGetMessage(second_stretch_feed_sub, (void *)&second_stretch_fetch_data);
     SubGetMessage(forward_feed_sub, (void *)&forward_fetch_data);
     SubGetMessage(horizontal_feed_sub, (void *)&horizontal_fetch_data);
-    
+    SubGetMessage(servo_feed_sub, (void *)&servo_fetch_data);
        //遥控器左下右中，切换为电脑模式
     //遥控器其余状态为遥控器模式
 //     if (switch_is_down(rc_data[TEMP].rc.switch_left)&&switch_is_mid(rc_data[TEMP].rc.switch_right)){
@@ -629,4 +636,5 @@ void RobotCMDTask()
    PubPushMessage(second_stretch_cmd_pub, (void *)&second_stretch_cmd_send);
    PubPushMessage(forward_cmd_pub, (void *)&forward_cmd_send);
    PubPushMessage(horizontal_cmd_pub, (void *)&horizontal_cmd_send);
+   PubPushMessage(servo_cmd_pub, (void *)&servo_cmd_send);
 }
