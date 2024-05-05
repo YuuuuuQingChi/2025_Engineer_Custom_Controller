@@ -23,18 +23,18 @@ void Second_Stretch_Init()
         },
         .controller_param_init_config = {
             .angle_PID = {
-                .Kp            = 50,
+                .Kp            = 250,
                 .Ki            = 0,
                 .Kd            = 0,
                 // .DeadBand      = 0.1f,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 3000,
-                .MaxOut = 10000,
+                .MaxOut = 15000,
             },
             .speed_PID = {
-                .Kp            = 1,
+                .Kp            = 0.5,
                 .Ki            = 0,
-                .Kd            = 0,//0.0065,
+                .Kd            = 0.005,//0.0065,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 3000,
                 .MaxOut        = 7000,

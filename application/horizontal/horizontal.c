@@ -66,9 +66,10 @@ void Horizontal_Task()
     // 后续增加没收到消息的处理(双板的情况)
     // 获取新的控制信息
     SubGetMessage(Horizontal_sub, &Horizontal_cmd_recv);
-switch (Horizontal_cmd_recv.Horizontal_mode) {
+    DJIMotorEnable(motor_Horizontal);
+    switch (Horizontal_cmd_recv.Horizontal_mode) {
         case HORIZONTAL_MOVE:
-        DJIMotorEnable(motor_Horizontal);
+        
             break;
         default:
             break;

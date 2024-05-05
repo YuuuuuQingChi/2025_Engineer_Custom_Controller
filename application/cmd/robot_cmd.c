@@ -95,7 +95,7 @@ void RobotCMDInit()
 
     robot_state = ROBOT_READY; // 启动时机器人进入工作模式,后续加入所有应用初始化完成之后再进入
     // chassis_cmd_send.chassis_mode=CHASSIS_WALK;
-    // horizontal_cmd_send.Horizontal_mode=HORIZONTAL_MOVE;
+    horizontal_cmd_send.Horizontal_mode=HORIZONTAL_MOVE;
     // first_stretch_cmd_send.first_stretch_mode=FIRST_STRETCH;
     // first_stretch_cmd_send.left_now=-STRETCH_1_INIT_ANGLE_LEFT;
     // first_stretch_cmd_send.right_now=STRETCH_1_INIT_ANGLE_LEFT;
@@ -291,24 +291,24 @@ static void RemoteControlSet()
     
     //差个升降的限位，上车测数据再说
     //以上是升降的控制逻辑
-    lift_cmd_send.left_now=lift_cmd_send.left_last;
-    lift_cmd_send.right_now=lift_cmd_send.right_last;
-    lift_cmd_send.left_now=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);    
-    lift_cmd_send.right_now=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
-    lift_cmd_send.left_last=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);    
-    lift_cmd_send.right_last=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
+    //lift_cmd_send.left_now=lift_cmd_send.left_last;
+    //lift_cmd_send.right_now=lift_cmd_send.right_last;
+    // lift_cmd_send.left_now=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);    
+    // lift_cmd_send.right_now=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
+    // lift_cmd_send.left_last=Limit_Set(lift_cmd_send.left_now,LIFT_M  AX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);    
+    // lift_cmd_send.right_last=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
 
-    first_stretch_cmd_send.left_now=Limit_Set(first_stretch_cmd_send.left_now,24000,-38000);    
-    first_stretch_cmd_send.right_now=Limit_Set(first_stretch_cmd_send.right_now,STRETCH_1_MAX_ANGLE_RIGHT,STRETCH_1_MIN_ANGLE_RIGHT);
-    first_stretch_cmd_send.left_last=Limit_Set(first_stretch_cmd_send.left_now,24000,-38000);    
-    first_stretch_cmd_send.right_last=Limit_Set(first_stretch_cmd_send.right_now,STRETCH_1_MAX_ANGLE_RIGHT,STRETCH_1_MIN_ANGLE_RIGHT);
+    // first_stretch_cmd_send.left_now=Limit_Set(first_stretch_cmd_send.left_now,24000,-38000);    
+    // first_stretch_cmd_send.right_now=Limit_Set(first_stretch_cmd_send.right_now,STRETCH_1_MAX_ANGLE_RIGHT,STRETCH_1_MIN_ANGLE_RIGHT);
+    // first_stretch_cmd_send.left_last=Limit_Set(first_stretch_cmd_send.left_now,24000,-38000);    
+    // first_stretch_cmd_send.right_last=Limit_Set(first_stretch_cmd_send.right_now,STRETCH_1_MAX_ANGLE_RIGHT,STRETCH_1_MIN_ANGLE_RIGHT);
 
-    second_stretch_cmd_send.left_now=Limit_Set(second_stretch_cmd_send.left_now,STRETCH_2_MAX_ANGLE_LEFT,STRETCH_2_MIN_ANGLE_LEFT);    
-    second_stretch_cmd_send.right_now=Limit_Set(second_stretch_cmd_send.right_now,STRETCH_2_MAX_ANGLE_RIGHT,STRETCH_2_MIN_ANGLE_RIGHT);
-    second_stretch_cmd_send.left_last=Limit_Set(second_stretch_cmd_send.left_now,STRETCH_2_MAX_ANGLE_LEFT,STRETCH_2_MIN_ANGLE_LEFT);    
-    second_stretch_cmd_send.right_last=Limit_Set(second_stretch_cmd_send.right_now,STRETCH_2_MAX_ANGLE_RIGHT,STRETCH_2_MIN_ANGLE_RIGHT);
+    // second_stretch_cmd_send.left_now=Limit_Set(second_stretch_cmd_send.left_now,STRETCH_2_MAX_ANGLE_LEFT,STRETCH_2_MIN_ANGLE_LEFT);    
+    // second_stretch_cmd_send.right_now=Limit_Set(second_stretch_cmd_send.right_now,STRETCH_2_MAX_ANGLE_RIGHT,STRETCH_2_MIN_ANGLE_RIGHT);
+    // second_stretch_cmd_send.left_last=Limit_Set(second_stretch_cmd_send.left_now,STRETCH_2_MAX_ANGLE_LEFT,STRETCH_2_MIN_ANGLE_LEFT);    
+    // second_stretch_cmd_send.right_last=Limit_Set(second_stretch_cmd_send.right_now,STRETCH_2_MAX_ANGLE_RIGHT,STRETCH_2_MIN_ANGLE_RIGHT);
 
-    horizontal_cmd_send.Now_MechAngle=Limit_Set(horizontal_cmd_send.Now_MechAngle,HORIZONTAL_MAX,HORIZONTAL_MIN);
+    // horizontal_cmd_send.Now_MechAngle=Limit_Set(horizontal_cmd_send.Now_MechAngle,HORIZONTAL_MAX,HORIZONTAL_MIN);
 
     //气泵
         if (is_range(rc_data[TEMP].rc.dial)){
@@ -488,6 +488,7 @@ int16_t auto_decide_flag = 1, auto_confirm_flag = 0;
 int16_t flag_r1, flag_r2, flag_r3, flag_r4; // 数据小心会溢出
 void auto_mode_decide(); // 自动模式选择函数
 void Put_it_back_in_the_silo();//放回矿仓
+void auto_small_resource_island();//取小资源岛
 
 void auto_mode() // 自动模式最终函数
 {

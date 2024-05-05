@@ -466,42 +466,42 @@ void My_UIGraphRefresh()
     // float angle_start = fmod(mid_point_angle + 360.0f - arc / 2.0f, 360.0f);
     // float angle_end = fmod(mid_point_angle + arc / 2.0f, 360.0f);
 
-        // 清空UI          GameRobotState
-        UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 9);
-        UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 8);
-        UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 7);
-        UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 6);
+        // // 清空UI          GameRobotState
+        // UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 9);
+        // UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 8);
+        // UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 7);
+        // UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 6);
 
-        UILineDraw(&UI_Deriction_line[0], "sq0", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30 + 30, SCREEN_WIDTH / 2 - 55, SCREEN_LENGTH / 2 - 30 + 5, SCREEN_WIDTH / 2 - 55);
-        UILineDraw(&UI_Deriction_line[1], "sq1", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 + 30, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 + 5);
-        UILineDraw(&UI_Deriction_line[2], "sq2", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30 - 5, SCREEN_WIDTH / 2 - 55, SCREEN_LENGTH / 2 - 30 - 30, SCREEN_WIDTH / 2 - 55);
-        UILineDraw(&UI_Deriction_line[3], "sq3", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 - 5, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 - 30);
+        // UILineDraw(&UI_Deriction_line[0], "sq0", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30 + 30, SCREEN_WIDTH / 2 - 55, SCREEN_LENGTH / 2 - 30 + 5, SCREEN_WIDTH / 2 - 55);
+        // UILineDraw(&UI_Deriction_line[1], "sq1", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 + 30, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 + 5);
+        // UILineDraw(&UI_Deriction_line[2], "sq2", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30 - 5, SCREEN_WIDTH / 2 - 55, SCREEN_LENGTH / 2 - 30 - 30, SCREEN_WIDTH / 2 - 55);
+        // UILineDraw(&UI_Deriction_line[3], "sq3", UI_Graph_ADD, 6, UI_Color_White, 1, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 - 5, SCREEN_LENGTH / 2 - 30, SCREEN_WIDTH / 2 - 55 - 30);
     
-        UICircleDraw(&UI_Circle_t[0], "sc0", UI_Graph_ADD, 9, UI_Color_White, 20, 700, 160, 8);
+        // UICircleDraw(&UI_Circle_t[0], "sc0", UI_Graph_ADD, 9, UI_Color_White, 20, 700, 160, 8);
      
-        UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_ADD, 9, UI_Color_White, 20, 1180, 160, 8);  // 摩擦轮是否开启显示
-        UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_ADD, 9, UI_Color_Orange, 20, 1280, 160, 8); // 摩擦轮是否正常显示
+        // UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_ADD, 9, UI_Color_White, 20, 1180, 160, 8);  // 摩擦轮是否开启显示
+        // UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_ADD, 9, UI_Color_Orange, 20, 1280, 160, 8); // 摩擦轮是否正常显示
     
-        UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_ADD, 9, UI_Color_White, 20, 580, 160, 8);
+        // UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_ADD, 9, UI_Color_White, 20, 580, 160, 8);
 
-        sprintf(UI_State_sta[3].show_Data, "SuperCap");
-        UICharDraw(&UI_State_sta[3], "ss3", UI_Graph_ADD, 9, UI_Color_Yellow, 20, 2, 80, 800, "SuperCap");
-        UICharRefresh(&referee_info.referee_id, UI_State_sta[3]);
-        UIRectangleDraw(&UI_Rectangle[1], "sr1", UI_Graph_ADD, 9, UI_Color_White, 4, 80, 710, 280, 730);
+        // sprintf(UI_State_sta[3].show_Data, "SuperCap");
+        // UICharDraw(&UI_State_sta[3], "ss3", UI_Graph_ADD, 9, UI_Color_Yellow, 20, 2, 80, 800, "SuperCap");
+        // UICharRefresh(&referee_info.referee_id, UI_State_sta[3]);
+        // UIRectangleDraw(&UI_Rectangle[1], "sr1", UI_Graph_ADD, 9, UI_Color_White, 4, 80, 710, 280, 730);
         
-        sprintf(UI_State_sta[4].show_Data, "Pitch");
-        UICharDraw(&UI_State_sta[4], "ss4", UI_Graph_ADD, 9, UI_Color_Yellow, 20, 2, 300, 700, "Pitch");
-        UICharRefresh(&referee_info.referee_id, UI_State_sta[4]);
+        // sprintf(UI_State_sta[4].show_Data, "Pitch");
+        // UICharDraw(&UI_State_sta[4], "ss4", UI_Graph_ADD, 9, UI_Color_Yellow, 20, 2, 300, 700, "Pitch");
+        // UICharRefresh(&referee_info.referee_id, UI_State_sta[4]);
 
-        //UIFloatDraw(&UI_Number_t[0], "sm1", UI_Graph_ADD, 9, UI_Color_Yellow, 20, 5, 3, 300 + 100, 700, Pitch_Angle * 1000);
+        // //UIFloatDraw(&UI_Number_t[0], "sm1", UI_Graph_ADD, 9, UI_Color_Yellow, 20, 5, 3, 300 + 100, 700, Pitch_Angle * 1000);
 
-        // 射击准点
-        UIGraphRefresh(&referee_info.referee_id, 7, UI_Deriction_line[0], UI_Deriction_line[1], UI_Deriction_line[2], UI_Deriction_line[3], UI_State_sta[0], UI_State_sta[2], UI_State_sta[4]);
-        UIGraphRefresh(&referee_info.referee_id, 2, UI_State_sta[5], UI_Rectangle[1]);
-        // 将位置标定线，小陀螺，弹舱盖，摩擦轮，电容一共7个图形打包一块发
-        UIGraphRefresh(&referee_info.referee_id, 5, UI_Deriction_line[0], UI_Deriction_line[1], UI_Circle_t[0], UI_Circle_t[1], UI_Circle_t[2]);
-        // UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[0],UI_Circle_t[2],UI_Circle_t[3],UI_Rectangle[1],&UI_Energy[1]);
-        UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[0], UI_Circle_t[2], UI_Circle_t[3], UI_Circle_t[4], UI_Energy[1]);
-        UIGraphRefresh(&referee_info.referee_id, 1, UI_Number_t[0]);
+        // // 射击准点
+        // UIGraphRefresh(&referee_info.referee_id, 7, UI_Deriction_line[0], UI_Deriction_line[1], UI_Deriction_line[2], UI_Deriction_line[3], UI_State_sta[0], UI_State_sta[2], UI_State_sta[4]);
+        // UIGraphRefresh(&referee_info.referee_id, 2, UI_State_sta[5], UI_Rectangle[1]);
+        // // 将位置标定线，小陀螺，弹舱盖，摩擦轮，电容一共7个图形打包一块发
+        // UIGraphRefresh(&referee_info.referee_id, 5, UI_Deriction_line[0], UI_Deriction_line[1], UI_Circle_t[0], UI_Circle_t[1], UI_Circle_t[2]);
+        // // UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[0],UI_Circle_t[2],UI_Circle_t[3],UI_Rectangle[1],&UI_Energy[1]);
+        // UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[0], UI_Circle_t[2], UI_Circle_t[3], UI_Circle_t[4], UI_Energy[1]);
+        // UIGraphRefresh(&referee_info.referee_id, 1, UI_Number_t[0]);
 
 }
