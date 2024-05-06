@@ -15,10 +15,9 @@ static Lift_Ctrl_Cmd_s lift_cmd_recv;         // 来自cmd的控制信息
 void Lift_Init()
 {
 // 升降左电机
-    Motor_Init_Config_s lift_left_config = {
+    Motor_Init_Config_s lift_config = {
         .can_init_config = {
             .can_handle = &hfdcan1,
-            .tx_id      = 5,
         },
         .controller_param_init_config = {
             .angle_PID = {
@@ -32,7 +31,7 @@ void Lift_Init()
             .speed_PID = {
                 .Kp            = 0.5,
                 .Ki            = 0,
-                .Kd            = 0,
+                .Kd            = 0.005,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
                 .IntegralLimit = 3000,
                 .MaxOut        = 15000,
@@ -49,46 +48,12 @@ void Lift_Init()
             .motor_reverse_flag    = MOTOR_DIRECTION_NORMAL,
         },
         .motor_type = M3508};
-    // 升降右电机
-    Motor_Init_Config_s lift_right_config = {
-        .can_init_config = {
-            .can_handle = &hfdcan1,
-            .tx_id      = 6,
-        },
-        .controller_param_init_config = {
-
-            .angle_PID = {
-                .Kp            = 250,
-                .Ki            = 0,
-                .Kd            = 0,
-                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .IntegralLimit = 3000,
-                .MaxOut        = 15000,
-            },
-            .speed_PID = {
-                .Kp            = 0.5,
-                .Ki            = 0,
-                .Kd            = 0.005,
-                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .IntegralLimit = 3000,
-                .MaxOut        = 15000,
-            },
-            //.other_angle_feedback_ptr = &right_angle_motor->measure.total_angle,
-            // 还需要增加角速度额外反馈指针,注意方向,ins_task.md中有c板的bodyframe坐标系说明
-            //.other_speed_feedback_ptr = (&gimbal_IMU_data->INS_data.INS_gyro[INS_PITCH_ADDRESS_OFFSET]),
-        },
-        .controller_setting_init_config = {
-            .angle_feedback_source = MOTOR_FEED,
-            .speed_feedback_source = MOTOR_FEED,
-            .outer_loop_type       = ANGLE_LOOP,
-            .close_loop_type       = SPEED_LOOP | ANGLE_LOOP,
-            .motor_reverse_flag    = MOTOR_DIRECTION_NORMAL,
-        },
-        .motor_type = M3508,
-    };
     // 电机对total_angle闭环,上电时为零,会保持静止,收到遥控器数据再动
-    lift_left_motor = DJIMotorInit(&lift_left_config);
-    lift_right_motor  = DJIMotorInit(&lift_right_config);
+    lift_config.can_init_config.tx_id    = 5;
+    lift_left_motor = DJIMotorInit(&lift_config);
+
+    lift_config.can_init_config.tx_id      = 6;
+    lift_right_motor  = DJIMotorInit(&lift_config);
 
     lift_pub = PubRegister("lift_feed", sizeof(Lift_Upload_Data_s));
     lift_sub = SubRegister("lift_cmd", sizeof(Lift_Ctrl_Cmd_s));
@@ -99,8 +64,7 @@ void Lift_Task()
 // 获取云台控制数据
     // 后续增加未收到数据的处理
     SubGetMessage(lift_sub, &lift_cmd_recv);
-    DJIMotorEnable(lift_left_motor);
-    DJIMotorEnable(lift_right_motor);
+
     // @todo:现在已不再需要电机反馈,实际上可以始终使用IMU的姿态数据来作为云台的反馈,yaw电机的offset只是用来跟随底盘
     // 根据控制模式进行电机反馈切换和过渡,视觉模式在robot_cmd模块就已经设置好,gimbal只看yaw_ref和pitch_ref
     switch (lift_cmd_recv.lift_mode) {
@@ -111,6 +75,8 @@ void Lift_Task()
             break;
         // 使用陀螺仪的反馈,底盘根据yaw电机的offset跟随云台或视觉模式采用
         case LIFT: // 后续只保留此模式
+            DJIMotorEnable(lift_left_motor);
+            DJIMotorEnable(lift_right_motor);
             //DJIMotorChangeFeed(lift_left_motor, ANGLE_LOOP, OTHER_FEED);
             // DJIMotorChangeFeed(left_speed_motor, SPEED_LOOP, OTHER_FEED);
             //DJIMotorChangeFeed(lift_right_motor, ANGLE_LOOP, OTHER_FEED);

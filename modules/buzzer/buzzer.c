@@ -339,19 +339,21 @@ void buzzer_one_note(uint16_t Note, float delay)
  * @brief :  蜂鸣器任务，播放完毕后自动挂起线程，循环播放除外
  * @return  void
  */
-__attribute__((noreturn)) void BuzzerTask(void *argument)
-{
-    UNUSED(argument);
-    for (;;) {
-        if(buzzer == NULL){
-            osThreadSuspend(BuzzerHandle); // 挂起线程
-            continue;
-        }
-        do {
-            string_handle();
-            buzzer_silence();
-        } while (buzzer->_repeat);
-        buzzer->busy = 0;   
-        osThreadSuspend(BuzzerHandle); // 挂起线程
-    }
-}
+// __attribute__((noreturn)) void BuzzerTask(void *argument)
+// {
+//     UNUSED(argument);
+//     for (;;) {
+//         // if(buzzer == NULL){
+//         //     osThreadSuspend(BuzzerHandle); // 挂起线程
+//         //     continue;
+//         // }
+//         // do {
+//         //     string_handle();
+//         //     buzzer_silence();
+//         // } while (buzzer->_repeat);
+//         // buzzer->busy = 0;   
+//         // osThreadSuspend(BuzzerHandle); // 挂起线程
+
+
+//     }
+// }
