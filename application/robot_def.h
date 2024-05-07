@@ -110,7 +110,7 @@ typedef enum{
 }second_stretch_mode_e;
 //横移模式设定
 typedef enum {
-    HORIZONTAL_ZERO_FORCE=0,
+    HORIZONTAL_ZERO_FORCE,
     HORIZONTAL_MOVE,
     HORIZONTAL_INIT,
 } Horizontal_mode_e;

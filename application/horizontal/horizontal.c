@@ -68,8 +68,8 @@ void Horizontal_Task()
     SubGetMessage(Horizontal_sub, &Horizontal_cmd_recv);
     DJIMotorEnable(motor_Horizontal);
     switch (Horizontal_cmd_recv.Horizontal_mode) {
-        case HORIZONTAL_MOVE:
-        
+        case HORIZONTAL_ZERO_FORCE:
+            DJIMotorStop(motor_Horizontal);
             break;
         default:
             break;

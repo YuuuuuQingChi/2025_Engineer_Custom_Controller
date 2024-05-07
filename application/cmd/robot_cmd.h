@@ -44,5 +44,5 @@ void RobotCMDInit();
 void RobotCMDTask();
 
 void Init_Value();
-float Limit_Set(float obj,int max,int min);
+float Limit_Set(float obj, float max, float min);
 #endif // !ROBOT_CMD_H
