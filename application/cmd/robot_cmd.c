@@ -62,7 +62,7 @@ static Servo_Cmd_s servo_cmd_send;           // 传递给升降的控制信息
 static Servo_Upload_Data_s servo_fetch_data; // 从升降获取的反馈信息
 
 PC_Mode_t PC_Mode;
-extern PIDInstance *encoder_pid;
+
 static Robot_Status_e robot_state; // 机器人整体工作状态
 
 
@@ -256,7 +256,7 @@ static void RemoteControlSet()
             HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, 0);
         }
         // 前端
-        //  control_forward(rc_data[TEMP].rc.rocker_l_ / 660.0 * 50,rc_data[TEMP].rc.rocker_r1 / 660.0 * 50);
+         control_forward(rc_data[TEMP].rc.rocker_l_ / 660.0 * 120,rc_data[TEMP].rc.rocker_r1 / 660.0 * 120);
     }
 
     // 双下
@@ -377,7 +377,7 @@ static void MouseKeySet()
         lift_cmd_send.right_now -= rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28;
 
         horizontal_cmd_send.Now_MechAngle += rc_data[TEMP].key[KEY_PRESS].d * 11 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 11;
-        control_forward((rc_data[TEMP].key[KEY_PRESS].q * 120 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q * 120), (rc_data[TEMP].key[KEY_PRESS].a * 120 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a));
+        control_forward((rc_data[TEMP].key[KEY_PRESS].q * 120 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q * 120), (rc_data[TEMP].key[KEY_PRESS].a * 120 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 120));
     }
 
     else if (PC_Mode == PC_To_Begin_ALL) {
@@ -431,11 +431,11 @@ void control_forward(int16_t ch1, int16_t ch2)
     if (mode != ROLL_RUN_MODE) {
         roll_last_angle = forward_fetch_data.new_forward_angle;
     }
-    final_angle                   = ch1 - ch2 + last_angle - relevant_angle;
+    final_angle                   = ch1 + ch2 + last_angle + relevant_angle;
     forward_cmd_send.angel_output = PIDCalculate(encoder_pid, forward_fetch_data.new_left_angle, final_angle);
 
     if (mode == ROLL_RUN_MODE) {
-        forward_cmd_send.angel_output1 = -forward_cmd_send.angel_output;
+        forward_cmd_send.angel_output1 = -(forward_cmd_send.angel_output);
     } else {
         forward_cmd_send.angel_output1 = forward_cmd_send.angel_output;
     }
@@ -444,14 +444,16 @@ void control_forward(int16_t ch1, int16_t ch2)
 void mode_change()
 {
 
-    if ((!is_range(rc_data[TEMP].rc.rocker_l_) && is_range(rc_data[TEMP].rc.rocker_r1)) || (((rc_data[TEMP].key[KEY_PRESS].q) || (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q)) && (!(rc_data[TEMP].key[KEY_PRESS].a) || !(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a)))) {
+    if ((!is_range(rc_data[TEMP].rc.rocker_l_) && is_range(rc_data[TEMP].rc.rocker_r1)) ) {
         mode                          = PITCH_RUN_MODE;
         forward_cmd_send.Forward_mode = PITCH;
-    } else if ((is_range(rc_data[TEMP].rc.rocker_l_) && !is_range(rc_data[TEMP].rc.rocker_r1)) || ((!(rc_data[TEMP].key[KEY_PRESS].q) || !(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q)) && ((rc_data[TEMP].key[KEY_PRESS].a) || (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a)))) {
+    } else if ((is_range(rc_data[TEMP].rc.rocker_l_) && !is_range(rc_data[TEMP].rc.rocker_r1))) {
         mode                          = ROLL_RUN_MODE;
         forward_cmd_send.Forward_mode = ROLL;
     } else {
         mode = STOP_MODE;
+        forward_cmd_send.Forward_mode = ROLL;
+
     }
 }
 
@@ -622,7 +624,7 @@ void RobotCMDTask()
         RemoteControlSet();
     }
     // 遥控器左下右上   自动模式
-    auto_mode();
+    //auto_mode();
 
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(lift_cmd_pub, (void *)&lift_cmd_send);

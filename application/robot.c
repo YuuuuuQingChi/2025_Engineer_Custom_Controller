@@ -50,10 +50,10 @@ void RobotInit()
 void RobotTask()
 {
     RobotCMDTask();
-    ChassisTask();
-    Lift_Task();
-    First_Stretch_Task();
-    Second_Stretch_Task();
-    Horizontal_Task();
+    // ChassisTask();
+    // Lift_Task();
+    // First_Stretch_Task();
+    // Second_Stretch_Task();
+    // Horizontal_Task();
     Forward_Task();
 }
