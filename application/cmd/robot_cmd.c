@@ -444,10 +444,10 @@ void control_forward(int16_t ch1, int16_t ch2)
 void mode_change()
 {
 
-    if ((!is_range(rc_data[TEMP].rc.rocker_l_) && is_range(rc_data[TEMP].rc.rocker_r1)) ) {
+    if ((!is_range(rc_data[TEMP].rc.rocker_l_) && is_range(rc_data[TEMP].rc.rocker_r1)) || (((rc_data[TEMP].key[KEY_PRESS].q) || (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q)) && (!(rc_data[TEMP].key[KEY_PRESS].a) || !(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a)))) {
         mode                          = PITCH_RUN_MODE;
         forward_cmd_send.Forward_mode = PITCH;
-    } else if ((is_range(rc_data[TEMP].rc.rocker_l_) && !is_range(rc_data[TEMP].rc.rocker_r1))) {
+    } else if ((is_range(rc_data[TEMP].rc.rocker_l_) && !is_range(rc_data[TEMP].rc.rocker_r1)) || ((!(rc_data[TEMP].key[KEY_PRESS].q) || !(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q)) && ((rc_data[TEMP].key[KEY_PRESS].a) || (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a)))) {
         mode                          = ROLL_RUN_MODE;
         forward_cmd_send.Forward_mode = ROLL;
     } else {
