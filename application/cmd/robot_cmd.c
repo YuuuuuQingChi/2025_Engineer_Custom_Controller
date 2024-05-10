@@ -258,6 +258,12 @@ static void RemoteControlSet()
         // 前端
          control_forward(rc_data[TEMP].rc.rocker_l_ / 660.0 * 120,rc_data[TEMP].rc.rocker_r1 / 660.0 * 120);
     }
+    
+    // 右侧开关状态[上],左侧开关状态[中]
+    if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_mid(rc_data[TEMP].rc.switch_left)) {
+        servo_cmd_send.pitch_now_angle += rc_data[TEMP].rc.rocker_r1 / 660.0 * 10;
+        servo_cmd_send.yaw_now_angle += rc_data[TEMP].rc.rocker_l_ / 660.0 * 10;
+    }
 
     // 双下
     if ((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)) {
@@ -294,7 +300,6 @@ static void RemoteControlSet()
     // second_stretch_cmd_send.right_last=Limit_Set(second_stretch_cmd_send.right_now,STRETCH_2_MAX_ANGLE_RIGHT,STRETCH_2_MIN_ANGLE_RIGHT);
 
     // horizontal_cmd_send.Now_MechAngle=Limit_Set(horizontal_cmd_send.Now_MechAngle,HORIZONTAL_MAX,HORIZONTAL_MIN);
-
     // 气泵 除双下模式都可以用
     if (is_range(rc_data[TEMP].rc.dial) && !((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left))) {
         HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, 1);
@@ -377,6 +382,10 @@ static void MouseKeySet()
         lift_cmd_send.right_now -= rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28;
 
         horizontal_cmd_send.Now_MechAngle += rc_data[TEMP].key[KEY_PRESS].d * 11 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 11;
+
+        // servo_cmd_send.pitch_now_angle += rc_data[TEMP].rc.rocker_r1 / 660.0 * 10;
+        // servo_cmd_send.yaw_now_angle += rc_data[TEMP].rc.rocker_l_ / 660.0 * 10;
+
         control_forward((rc_data[TEMP].key[KEY_PRESS].q * 120 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q * 120), (rc_data[TEMP].key[KEY_PRESS].a * 120 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 120));
     }
 
@@ -617,6 +626,7 @@ void RobotCMDTask()
     SubGetMessage(second_stretch_feed_sub, (void *)&second_stretch_fetch_data);
     SubGetMessage(forward_feed_sub, (void *)&forward_fetch_data);
     SubGetMessage(horizontal_feed_sub, (void *)&horizontal_fetch_data);
+    SubGetMessage(servo_feed_sub,(void *)&servo_fetch_data);
     // 遥控器其余状态为遥控器模式//遥控器左下右中，切换为电脑模式
     if (switch_is_down(rc_data[TEMP].rc.switch_left) && switch_is_mid(rc_data[TEMP].rc.switch_right)) {
         MouseKeySet();
@@ -632,4 +642,5 @@ void RobotCMDTask()
     PubPushMessage(second_stretch_cmd_pub, (void *)&second_stretch_cmd_send);
     PubPushMessage(forward_cmd_pub, (void *)&forward_cmd_send);
     PubPushMessage(horizontal_cmd_pub, (void *)&horizontal_cmd_send);
+    PubPushMessage(servo_cmd_pub,(void *)&servo_cmd_send);
 }

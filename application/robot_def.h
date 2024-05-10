@@ -169,7 +169,8 @@ typedef struct
 
 typedef struct 
 {
-    float now_angel;
+    float pitch_now_angle;
+    float yaw_now_angle;
 }Servo_Cmd_s;
 
 typedef struct
