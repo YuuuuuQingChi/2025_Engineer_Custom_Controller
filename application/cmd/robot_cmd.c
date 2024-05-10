@@ -259,8 +259,8 @@ static void RemoteControlSet()
          control_forward(rc_data[TEMP].rc.rocker_l_ / 660.0 * 120,rc_data[TEMP].rc.rocker_r1 / 660.0 * 120);
     }
     
-    // 右侧开关状态[上],左侧开关状态[中]
-    if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_mid(rc_data[TEMP].rc.switch_left)) {
+    // 右侧开关状态[下],左侧开关状态[中]
+    if ((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_mid(rc_data[TEMP].rc.switch_left)) {
         servo_cmd_send.pitch_now_angle += rc_data[TEMP].rc.rocker_r1 / 660.0 * 10;
         servo_cmd_send.yaw_now_angle += rc_data[TEMP].rc.rocker_l_ / 660.0 * 10;
     }
