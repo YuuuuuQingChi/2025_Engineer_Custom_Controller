@@ -27,6 +27,9 @@ static void RectifyRCjoystick()
             *(&rc_ctrl[TEMP].rc.rocker_l_ + i) = 0;
 }
 
+static void RectifyPCjoystick(){
+    
+}
 /**
  * @brief 遥控器数据解析
  *
@@ -42,6 +45,7 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
     rc_ctrl[TEMP].rc.rocker_l1 = (((sbus_buf[4] >> 1) | (sbus_buf[5] << 7)) & 0x07ff) - RC_CH_VALUE_OFFSET;                       //!< Channel 3
     rc_ctrl[TEMP].rc.dial = ((sbus_buf[16] | (sbus_buf[17] << 8)) & 0x07FF) - RC_CH_VALUE_OFFSET;                                 // 左侧拨轮
     RectifyRCjoystick();
+
     // 开关,0左1右
     rc_ctrl[TEMP].rc.switch_right = ((sbus_buf[5] >> 4) & 0x0003);     //!< Switch right
     rc_ctrl[TEMP].rc.switch_left = ((sbus_buf[5] >> 4) & 0x000C) >> 2; //!< Switch left
@@ -54,6 +58,7 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
 
     //  位域的按键值解算,直接memcpy即可,注意小端低字节在前,即lsb在第一位,msb在最后
     *(uint16_t *)&rc_ctrl[TEMP].key[KEY_PRESS] = (uint16_t)(sbus_buf[14] | (sbus_buf[15] << 8));
+    RectifyPCjoystick();
     
     if ((rc_ctrl[TEMP].key[KEY_PRESS].ctrl)&& (1-rc_ctrl[TEMP].key[KEY_PRESS].shift))// ctrl键按下
        {memcpy(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_CTRL], &rc_ctrl[TEMP].key[KEY_PRESS], sizeof(Key_t));

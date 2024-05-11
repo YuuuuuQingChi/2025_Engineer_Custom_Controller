@@ -1,6 +1,7 @@
 // app
 #include "robot_def.h"
 #include "robot_cmd.h"
+#include "ramp.h"
 //  module
 #include "remote_control.h"
 #include "ins_task.h"
@@ -270,13 +271,6 @@ static void RemoteControlSet()
             first_stretch_cmd_send.right_now = first_stretch_cmd_send.right_last;
             first_stretch_cmd_send.left_now  = first_stretch_cmd_send.left_last;
         }
-
-        if (is_range(rc_data[TEMP].rc.dial)) {
-            HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, 1);
-
-        } else {
-            HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, 0);
-        }
         // 前端
          control_forward(rc_data[TEMP].rc.rocker_l_ / 660.0 * 120,rc_data[TEMP].rc.rocker_r1 / 660.0 * 120);
     }
@@ -289,12 +283,19 @@ static void RemoteControlSet()
 
     // 双下
     if ((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)) {
+        memset(&rc_data[TEMP].key[KEY_PRESS], 0, sizeof(Key_t));
+        memset(&rc_data[TEMP].key[KEY_PRESS_WITH_CTRL], 0, sizeof(Key_t));
+        memset(&rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT], 0, sizeof(Key_t));
+        memset(&rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL], 0, sizeof(Key_t));
+
         lift_cmd_send.lift_mode                     = LIFT_STOP;
         second_stretch_cmd_send.second_stretch_mode = SECOND_STOP;
         first_stretch_cmd_send.first_stretch_mode   = FIRST_STOP;
         forward_cmd_send.Forward_mode = FORWARD_STOP;
         horizontal_cmd_send.Horizontal_mode = HORIZONTAL_ZERO_FORCE;
         chassis_cmd_send.chassis_mode               = CHASSIS_ZERO_FORCE;
+
+        
         if (is_range(rc_data[TEMP].rc.dial)) {
             __set_FAULTMASK(1);
             NVIC_SystemReset();
@@ -347,10 +348,32 @@ static void MouseKeySet()
     if (PC_Mode == PC_Walk) {
         // 行走模式
         if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].r)flag_refresh_ui=1;
+
         chassis_cmd_send.chassis_mode = CHASSIS_WALK;
-        chassis_cmd_send.vy           = rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12; // 系数待测
-        chassis_cmd_send.vx           = rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].d * 660 * 12;
-        chassis_cmd_send.wz           = rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].e * 660 * 12;
+
+        if (rc_data[TEMP].key[KEY_PRESS].w||rc_data[TEMP].key[KEY_PRESS].s){
+        chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12)*ramp_calc(&chassis_vx_ramp); 
+        }
+        else {
+            ramp_init(&chassis_vx_ramp, RAMP_TIME);
+            chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12)*ramp_calc(&chassis_vx_ramp);
+        }
+
+        if (rc_data[TEMP].key[KEY_PRESS].a||rc_data[TEMP].key[KEY_PRESS].d){
+        chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].d * 660 * 12)*ramp_calc(&chassis_vy_ramp);
+        }
+        else {
+            ramp_init(&chassis_vy_ramp, RAMP_TIME);
+            chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].d * 660 * 12)*ramp_calc(&chassis_vy_ramp);
+        }
+
+        if (rc_data[TEMP].key[KEY_PRESS].q||rc_data[TEMP].key[KEY_PRESS].e){
+        chassis_cmd_send.wz           = (rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].e * 660 * 12)*ramp_calc(&chassis_vw_ramp);
+        }
+        else {
+            ramp_init(&chassis_vw_ramp, RAMP_TIME);
+            chassis_cmd_send.wz           = (rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].e * 660 * 12)*ramp_calc(&chassis_vw_ramp);
+        }
     }
 
     else if (PC_Mode == PC_Get_Money) { // 兑矿模式0.
@@ -375,17 +398,24 @@ static void MouseKeySet()
 
         // 这里左右电机默认镜像，若反转应改正负
 
-        first_stretch_cmd_send.left_now += -rc_data[TEMP].key[KEY_PRESS].z * 66 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].z * 66 - rc_data[TEMP].key[KEY_PRESS].s * 66 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 66;
-        first_stretch_cmd_send.right_now += -rc_data[TEMP].key[KEY_PRESS].z * 66 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].z * 66 + rc_data[TEMP].key[KEY_PRESS].s * 66 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 66;
+        first_stretch_cmd_send.left_now += -rc_data[TEMP].key[KEY_PRESS].z * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].z *50  - rc_data[TEMP].key[KEY_PRESS].s * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 50;
+        first_stretch_cmd_send.right_now += -rc_data[TEMP].key[KEY_PRESS].z * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].z * 50 + rc_data[TEMP].key[KEY_PRESS].s * 50 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 50;
 
-        second_stretch_cmd_send.left_now += rc_data[TEMP].key[KEY_PRESS].x * 20 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].x * 20;
-        second_stretch_cmd_send.right_now -= rc_data[TEMP].key[KEY_PRESS].x * 20 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].x * 20;
+        second_stretch_cmd_send.left_now += rc_data[TEMP].key[KEY_PRESS].x * 16 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].x * 16;
+        second_stretch_cmd_send.right_now -= rc_data[TEMP].key[KEY_PRESS].x * 16 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].x * 16;
 
-        lift_cmd_send.left_now += rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28;
-        lift_cmd_send.right_now -= rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28;
+        if (rc_data[TEMP].key[KEY_PRESS].e||rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e){
+                lift_cmd_send.left_now += (rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28)*ramp_calc(&lift_ramp);
+                lift_cmd_send.right_now -= (rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28)*ramp_calc(&lift_ramp);
+        }
+        else {
+            ramp_init(&lift_ramp,RAMP_TIME);
+        }
 
         horizontal_cmd_send.Now_MechAngle += rc_data[TEMP].key[KEY_PRESS].d * 11 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 11;
 
+        if (rc_data[TEMP].key[KEY_PRESS].v)HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, 1);
+        if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].v)HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, 1);
         // servo_cmd_send.pitch_now_angle += rc_data[TEMP].rc.rocker_r1 / 660.0 * 10;
         // servo_cmd_send.yaw_now_angle += rc_data[TEMP].rc.rocker_l_ / 660.0 * 10;
 
@@ -634,14 +664,18 @@ void RobotCMDTask()
     SubGetMessage(servo_feed_sub,(void *)&servo_fetch_data);
     // 遥控器其余状态为遥控器模式//遥控器左下右中，切换为电脑模式
     if (switch_is_down(rc_data[TEMP].rc.switch_left) && switch_is_mid(rc_data[TEMP].rc.switch_right)) {
+
         MouseKeySet();
+
     } else {
         RemoteControlSet();
     }
     // 遥控器左下右上   自动模式
+    if (switch_is_down(rc_data[TEMP].rc.switch_left)&&switch_is_up(rc_data[TEMP].rc.switch_right)){
     auto_mode();
 
     cmd_value_limit();
+    }
 
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(lift_cmd_pub, (void *)&lift_cmd_send);

@@ -149,7 +149,6 @@ typedef struct
     float vx;           // 前进方向速度
     float vy;           // 横移方向速度
     float wz;           // 旋转速度
-    float offset_angle; // 底盘和归中位置的夹角
     chassis_mode_e chassis_mode;
     int chassis_speed_buff;
     // UI部分
@@ -158,7 +157,7 @@ typedef struct
 } Chassis_Ctrl_Cmd_s;
 
 typedef struct
-{ // 一级伸出角度控制
+{ 
     float left_now;
     float right_now;
     float left_last;
