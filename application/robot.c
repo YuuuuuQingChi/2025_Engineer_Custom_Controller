@@ -22,6 +22,7 @@
 #include "forward.h"
 #include "referee_UI.h"
 
+int32_t flag_referee_init =0;
 void RobotInit()
 {
     // 关闭中断,防止在初始化过程中发生中断
@@ -34,7 +35,8 @@ void RobotInit()
     RobotCMDInit();
   //BuzzerPlay(RoboMaster_You);
   //buzzer_one_note(La_freq, 1);
-   ChassisInit();                  
+   ChassisInit();
+   flag_referee_init=1;                  
   //buzzer_one_note(So_freq, 0.1f);
     Lift_Init();
     First_Stretch_Init();

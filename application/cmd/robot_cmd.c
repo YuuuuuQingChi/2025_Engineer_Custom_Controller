@@ -333,10 +333,10 @@ void PC_Mode_Set(PC_Mode_t *mode)
 
 
 
-
+int flag_refresh_ui=0;
 /**
  * @brief 输入为键鼠时模式和控制量设置
- *
+ *  
  */
 static void MouseKeySet()
 {
@@ -344,6 +344,7 @@ static void MouseKeySet()
 
     if (PC_Mode == PC_Walk) {
         // 行走模式
+        if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].r)flag_refresh_ui=1;
         chassis_cmd_send.chassis_mode = CHASSIS_WALK;
         chassis_cmd_send.vy           = rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12; // 系数待测
         chassis_cmd_send.vx           = rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].d * 660 * 12;
@@ -475,7 +476,7 @@ void mode_change()
  *
  */
 
-int16_t auto_decide_flag = 1, auto_confirm_flag = 0;
+int32_t auto_decide_flag = 1, auto_confirm_flag = 0;
 int16_t flag_r1, flag_r2, flag_r3, flag_r4;                                                  // 数据小心会溢出
 void auto_mode_decide();                                                                     // 自动模式选择函数
 void Put_it_back_in_the_silo();                                                              // 放回矿仓
@@ -489,9 +490,11 @@ void auto_mode() // 自动模式最终函数
     {
         auto_mode_decide();
         if (rc_data[TEMP].rc.rocker_l_ > 200 || rc_data[TEMP].rc.rocker_l_ < -200) {
+            auto_confirm_flag=1;
             auto_small_resource_island(); // 取小资源岛
             Put_it_back_in_the_silo();    // 扔矿仓
         } else {
+            auto_confirm_flag=0;
             Maintain_current_posture(); // 维持当前姿态
         }
     }
@@ -634,7 +637,7 @@ void RobotCMDTask()
         RemoteControlSet();
     }
     // 遥控器左下右上   自动模式
-    //auto_mode();
+    auto_mode();
 
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(lift_cmd_pub, (void *)&lift_cmd_send);

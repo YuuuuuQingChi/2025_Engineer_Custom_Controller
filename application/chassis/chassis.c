@@ -106,6 +106,7 @@ void ChassisInit()
 
     referee_data = RefereeHardwareInit(&huart10); // 裁判系统初始化,会同时初始化UI
 
+    
     //@ 工程无超电 -czh
     // SuperCap_Init_Config_s cap_conf = {
     //     .can_config = {

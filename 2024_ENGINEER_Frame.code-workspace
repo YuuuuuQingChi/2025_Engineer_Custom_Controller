@@ -22,7 +22,8 @@
             "cstdint": "c",
             "cstdlib": "c",
             "cmath": "c",
-            "cstdio": "c"
+            "cstdio": "c",
+            "UI.C": "cpp"
         },
         "[yaml]": {
             "editor.insertSpaces": true,
