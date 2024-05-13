@@ -405,11 +405,12 @@ static void MouseKeySet()
         second_stretch_cmd_send.right_now -= rc_data[TEMP].key[KEY_PRESS].x * 16 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].x * 16;
 
         if (rc_data[TEMP].key[KEY_PRESS].e||rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e){
-                lift_cmd_send.left_now += (rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28)*ramp_calc(&lift_ramp);
-                lift_cmd_send.right_now -= (rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28)*ramp_calc(&lift_ramp);
+                lift_cmd_send.left_now += (rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28)*ramp_calc(&lift_l_ramp);
+                lift_cmd_send.right_now -= (rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28)*ramp_calc(&lift_r_ramp);
         }
         else {
-            ramp_init(&lift_ramp,RAMP_TIME);
+            ramp_init(&lift_r_ramp,RAMP_TIME);
+            ramp_init(&lift_l_ramp,RAMP_TIME);
         }
 
         horizontal_cmd_send.Now_MechAngle += rc_data[TEMP].key[KEY_PRESS].d * 11 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 11;
