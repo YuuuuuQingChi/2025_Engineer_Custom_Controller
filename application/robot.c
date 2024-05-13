@@ -21,8 +21,10 @@
 #include "horizontal.h"
 #include "forward.h"
 #include "referee_UI.h"
-
+#include "ui.h"
 int32_t flag_referee_init =0;
+static referee_info_t *referee_data; // 用于获取裁判系统的数据
+
 void RobotInit()
 {
     // 关闭中断,防止在初始化过程中发生中断
@@ -36,6 +38,8 @@ void RobotInit()
   //BuzzerPlay(RoboMaster_You);
   //buzzer_one_note(La_freq, 1);
    ChassisInit();
+
+   referee_data = RefereeHardwareInit(&huart10); // 裁判系统初始化,会同时初始化UI
    flag_referee_init=1;                  
   //buzzer_one_note(So_freq, 0.1f);
     Lift_Init();
@@ -51,11 +55,12 @@ void RobotInit()
 
 void RobotTask()
 {
+    
     RobotCMDTask();
-    // ChassisTask();
-    // Lift_Task();
-    // First_Stretch_Task();
-    // Second_Stretch_Task();
-    // Horizontal_Task();
+    ChassisTask();
+    Lift_Task();
+    First_Stretch_Task();
+    Second_Stretch_Task();
+    Horizontal_Task();
     Forward_Task();
 }

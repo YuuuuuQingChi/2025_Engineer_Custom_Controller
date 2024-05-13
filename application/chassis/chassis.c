@@ -42,7 +42,6 @@ static Subscriber_t *chassis_sub;                   // 用于订阅底盘的控�
 static Chassis_Ctrl_Cmd_s chassis_cmd_recv;         // 底盘接收到的控制命令
 static Chassis_Upload_Data_s chassis_feedback_data; // 底盘回传的反馈数据
 
-static referee_info_t *referee_data; // 用于获取裁判系统的数据
 
 // static SuperCapInstance *cap;          //工程无超电，删了                             // 超级电容
 static DJIMotorInstance *motor_lf, *motor_rf, *motor_lb, *motor_rb; // left right forward back
@@ -104,7 +103,6 @@ void ChassisInit()
     chassis_motor_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_REVERSE;
     motor_rb                                                               = DJIMotorInit(&chassis_motor_config);
 
-    referee_data = RefereeHardwareInit(&huart10); // 裁判系统初始化,会同时初始化UI
 
     
     //@ 工程无超电 -czh

@@ -5,6 +5,7 @@
 
 void DeterminRobotID();
 
+void My_UIGraphInit();
 #endif
 
 #endif /* B00DB2C6_F650_4EFF_9C25_F09694ECEDAD */
