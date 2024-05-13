@@ -368,11 +368,11 @@ static void MouseKeySet()
         }
 
         if (rc_data[TEMP].key[KEY_PRESS].q||rc_data[TEMP].key[KEY_PRESS].e){
-        chassis_cmd_send.wz           = (rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].e * 660 * 12)*ramp_calc(&chassis_vw_ramp);
+        chassis_cmd_send.wz           = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12)*ramp_calc(&chassis_vw_ramp);
         }
         else {
             ramp_init(&chassis_vw_ramp, RAMP_TIME);
-            chassis_cmd_send.wz           = (rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].e * 660 * 12)*ramp_calc(&chassis_vw_ramp);
+            chassis_cmd_send.wz           = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12)*ramp_calc(&chassis_vw_ramp);
         }
     }
 
