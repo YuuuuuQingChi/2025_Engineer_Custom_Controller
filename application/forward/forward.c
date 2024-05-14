@@ -51,8 +51,8 @@ void Forward_Init()
         .controller_param_init_config = {
             
             .speed_PID = {
-                .Kp            = 0.9,
-                .Ki            = 0.1,
+                .Kp            = 1.0,
+                .Ki            = 0.07,
                 .Kd            = 0,
                 .IntegralLimit = 1000,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,

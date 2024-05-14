@@ -69,7 +69,7 @@ void Horizontal_Task()
     DJIMotorEnable(motor_Horizontal);
     switch (Horizontal_cmd_recv.Horizontal_mode) {
         case HORIZONTAL_ZERO_FORCE:
-            DJIMotorStop(motor_Horizontal);
+           DJIMotorStop(motor_Horizontal);
             break;
         default:
             break;
