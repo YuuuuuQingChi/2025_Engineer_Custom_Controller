@@ -24,6 +24,7 @@
 
 /****************************通信协议格式****************************/
 
+
 /* 通信协议格式偏移，枚举类型,代替#define声明 */
 typedef enum
 {
@@ -335,7 +336,6 @@ typedef struct
 	uint32_t end_x : 11;
 	uint32_t end_y : 11;
 } Graph_Data_t;
-
 typedef struct
 {
 	Graph_Data_t Graph_Control;

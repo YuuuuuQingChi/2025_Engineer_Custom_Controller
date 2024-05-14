@@ -18,7 +18,7 @@
 #include "dji_motor.h"
 #include "encoder.h"
 #include "servo_motor.h"
-
+#include "remote_control.h"
 /* 开发板类型定义,烧录时注意不要弄错对应功能;修改定义后需要重新编译,只能存在一个定义! */
 #define ONE_BOARD // 单板控制整车
 // #define CHASSIS_BOARD //底盘板
@@ -192,6 +192,14 @@ typedef struct
 } Second_Stretch_Ctrl_Cmd_s;
 
 typedef struct
+{ 
+    PC_Mode_t PC_Mode;
+    int32_t auto_decide_flag ; 
+    int32_t auto_confirm_flag;
+    int flag_refresh_ui;
+} ui_Cmd_s;
+
+typedef struct
 {
     // 控制部分
     float Now_MechAngle;
@@ -286,7 +294,11 @@ typedef struct
 
 }Forward_Upload_Data_s; 
 
+typedef struct
+{ 
+   int flag_refresh_ui;
 
+}ui_Upload_Data_s; 
 
 
 #pragma pack() // 开启字节对齐,结束前面的#pragma pack(1)

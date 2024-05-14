@@ -62,7 +62,12 @@ static Subscriber_t *servo_feed_sub;         // 升降反馈信息订阅者
 static Servo_Cmd_s servo_cmd_send;           // 传递给升降的控制信息
 static Servo_Upload_Data_s servo_fetch_data; // 从升降获取的反馈信息
 
-PC_Mode_t PC_Mode;
+static Publisher_t *ui_cmd_pub;           // 升降控制消息发布者
+static Subscriber_t *ui_feed_sub;         // 升降反馈信息订阅者
+static ui_Cmd_s ui_cmd_send;           // 传递给升降的控制信息
+static ui_Upload_Data_s ui_fetch_data; // 从升降获取的反馈信息
+
+
 
 static Robot_Status_e robot_state; // 机器人整体工作状态
 
@@ -92,6 +97,9 @@ void RobotCMDInit()
 
     servo_cmd_pub  = PubRegister("servo_cmd", sizeof(Servo_Cmd_s));
     servo_feed_sub = SubRegister("servo_feed", sizeof(Servo_Upload_Data_s));
+
+    ui_cmd_pub      = PubRegister("ui_cmd", sizeof(ui_Cmd_s));
+    ui_feed_sub     = SubRegister("ui_feed", sizeof(ui_Upload_Data_s));
 
     robot_state = ROBOT_READY; // 启动时机器人进入工作模式,后续加入所有应用初始化完成之后再进入
     // chassis_cmd_send.chassis_mode=CHASSIS_WALK;
@@ -317,18 +325,26 @@ void PC_Mode_Set(PC_Mode_t *mode)
 
 
 
-int flag_refresh_ui=0;
+
 /**
  * @brief 输入为键鼠时模式和控制量设置
  *  
  */
 static void MouseKeySet()
 {
-    PC_Mode_Set(&PC_Mode);
+    PC_Mode_Set(&ui_cmd_send.PC_Mode);
+    ui_cmd_send.flag_refresh_ui=ui_fetch_data.flag_refresh_ui;
+    if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].r)ui_cmd_send.flag_refresh_ui=1;
+    if (ui_cmd_send.PC_Mode == PC_Walk) {
+        chassis_cmd_send.chassis_mode = CHASSIS_WALK;
+        chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12);
+        chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].d * 660 * 12);
+        chassis_cmd_send.wz           = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12);
+    }
 
-    if (PC_Mode == PC_Walk) {
+    else if (ui_cmd_send.PC_Mode == PC_Get_Money) { 
+        // 这里左右电机默认镜像，若反转应改正负
         // 行走模式
-        if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].r)flag_refresh_ui=1;
 
             chassis_cmd_send.chassis_mode = CHASSIS_WALK;
 
@@ -355,10 +371,6 @@ static void MouseKeySet()
             ramp_init(&chassis_vw_ramp, RAMP_TIME);
             chassis_cmd_send.wz           = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12)*ramp_calc(&chassis_vw_ramp);
         }
-    }
-
-    else if (PC_Mode == PC_Get_Money) { 
-        // 这里左右电机默认镜像，若反转应改正负
 
         first_stretch_cmd_send.left_now += -rc_data[TEMP].key[KEY_PRESS].z * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].z *50  - rc_data[TEMP].key[KEY_PRESS].s * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 50;
         first_stretch_cmd_send.right_now += -rc_data[TEMP].key[KEY_PRESS].z * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].z * 50 + rc_data[TEMP].key[KEY_PRESS].s * 50 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 50;
@@ -390,7 +402,7 @@ static void MouseKeySet()
         control_forward((rc_data[TEMP].key[KEY_PRESS].q * 80 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q * 80), (rc_data[TEMP].key[KEY_PRESS].a * 80 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 80));
     }
 
-    else if (PC_Mode == PC_To_Begin_ALL) {
+    else if (ui_cmd_send.PC_Mode == PC_To_Begin_ALL) {
         // 全回到初始位置
         // first_stretch_cmd_send.first_stretch_mode   = FIRST_INIT;
         // second_stretch_cmd_send.second_stretch_mode = SECOND_INIT;
@@ -398,7 +410,7 @@ static void MouseKeySet()
         // horizontal_cmd_send.Horizontal_mode         = HORIZONTAL_INIT;
     }
 
-    else if (PC_Mode == DA_MIAO_Reset_All) {
+    else if (ui_cmd_send.PC_Mode == DA_MIAO_Reset_All) {
         // 重新上电达妙板子
          __set_FAULTMASK(1);
          NVIC_SystemReset();
@@ -475,7 +487,6 @@ void mode_change()
  *
  */
 
-int32_t auto_decide_flag = 1, auto_confirm_flag = 0;
 int16_t flag_r1, flag_r2, flag_r3, flag_r4;    // 数据小心会溢出
 int16_t flag1 = 1,flag2,flag3 = 1;                                            
 void auto_mode_decide();                                                                     // 自动模式选择函数
@@ -485,16 +496,17 @@ float Automatic_mode_target_setting(float target, float measure, float expected_
 
 void auto_mode() // 自动模式最终函数
 {
-
+    ui_cmd_send.auto_confirm_flag=0;
+    ui_cmd_send.auto_decide_flag=1; 
     if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)) // 右上左下
     {
         auto_mode_decide();
         if (rc_data[TEMP].rc.rocker_l_ > 200 || rc_data[TEMP].rc.rocker_l_ < -200) {
-            auto_confirm_flag=1;
+            ui_cmd_send.auto_confirm_flag=1;
             auto_small_resource_island(); // 取小资源岛
             Put_it_back_in_the_silo();    // 扔矿仓
         } else {
-            auto_confirm_flag=0;
+            ui_cmd_send.auto_confirm_flag=0;
             flag3 = 1;
             Maintain_current_posture(); // 维持当前姿态
         }
@@ -524,15 +536,15 @@ void auto_mode_decide()
         flag_r4 = 0;
     }
     if (flag_r1 > 100) {
-        auto_decide_flag = 1; // 左矿
+        ui_cmd_send.auto_decide_flag = 1; // 左矿
 
     } else if (flag_r2 > 100) {
-        auto_decide_flag = 2; // 中矿
+        ui_cmd_send.auto_decide_flag = 2; // 中矿
     } else if (flag_r3 > 100) {
-        auto_decide_flag = 3; // 右矿
+        ui_cmd_send.auto_decide_flag = 3; // 右矿
 
     } else if (flag_r4 > 100) {
-        auto_decide_flag = 4; // 收回矿仓
+        ui_cmd_send.auto_decide_flag = 4; // 收回矿仓
     }
 }
 void auto_small_resource_island() // 取小资源岛
@@ -558,7 +570,7 @@ void auto_small_resource_island() // 取小资源岛
    
     second_stretch_cmd_send.right_now   = Automatic_mode_target_setting(1, second_stretch_fetch_data.new_right_angle, 50);
     second_stretch_cmd_send.left_now    = Automatic_mode_target_setting(-111, second_stretch_fetch_data.new_left_angle, 50);
-    switch (auto_decide_flag) {
+    switch (ui_cmd_send.auto_decide_flag) {
         case 1: // 左矿
             if (second_stretch_fetch_data.new_left_angle > -5900 || second_stretch_fetch_data.new_right_angle < 6300) {
                 horizontal_cmd_send.Now_MechAngle = Automatic_mode_target_setting(-13262, horizontal_fetch_data.Horizontal_Movement, 60);
@@ -624,7 +636,7 @@ void auto_small_resource_island() // 取小资源岛
 // 放回矿仓
 void Put_it_back_in_the_silo()
 {
-    if(auto_decide_flag == 4)
+    if(ui_cmd_send.auto_decide_flag == 4)
     {
     horizontal_cmd_send.Now_MechAngle = Automatic_mode_target_setting(27, horizontal_fetch_data.Horizontal_Movement, 60);
     if (horizontal_fetch_data.Horizontal_Movement < 1000 && horizontal_fetch_data.Horizontal_Movement > -1000) // 横移回到了二级的里面
@@ -697,6 +709,7 @@ void RobotCMDTask()
     SubGetMessage(forward_feed_sub, (void *)&forward_fetch_data);
     SubGetMessage(horizontal_feed_sub, (void *)&horizontal_fetch_data);
     SubGetMessage(servo_feed_sub,(void *)&servo_fetch_data);
+    SubGetMessage(ui_feed_sub,(void *)&ui_fetch_data);
     // 遥控器其余状态为遥控器模式//遥控器左下右上，切换为电脑模式
     if (switch_is_down(rc_data[TEMP].rc.switch_left) && switch_is_up(rc_data[TEMP].rc.switch_right)) {
 
@@ -708,6 +721,7 @@ void RobotCMDTask()
     // 遥控器左下右上   自动模式
     auto_mode();
     cmd_value_limit();
+    PubPushMessage(ui_cmd_pub,(void *)&ui_cmd_send);
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(lift_cmd_pub, (void *)&lift_cmd_send);
     PubPushMessage(first_stretch_cmd_pub, (void *)&first_stretch_cmd_send);

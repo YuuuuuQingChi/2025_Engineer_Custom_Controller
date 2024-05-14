@@ -42,6 +42,7 @@ void RobotInit()
     Second_Stretch_Init();
     Horizontal_Init();
     Forward_Init();
+    uiInit();
     __enable_irq();
 }
 
@@ -55,5 +56,5 @@ void RobotTask()
     Second_Stretch_Task();
     Horizontal_Task();
     Forward_Task();
-
+    
 }
