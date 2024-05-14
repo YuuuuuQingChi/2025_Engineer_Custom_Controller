@@ -92,7 +92,6 @@ typedef union
 typedef enum{
     PC_Walk=0,         //行走模式
     PC_Get_Money,      //取矿模式
-    PC_To_RC,          //转为遥控器模式
     PC_To_Begin_ALL,   //全部初始化
     DA_MIAO_Reset_All, //达妙重新上电
 }PC_Mode_t;

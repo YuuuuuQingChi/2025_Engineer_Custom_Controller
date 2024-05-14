@@ -18,7 +18,7 @@
             0,           \
     }
 
-#define RAMP_TIME 500
+#define RAMP_TIME 250
 
 // 斜坡类型，计算WASD移动映射在底盘的速度
 typedef struct ramp_t
@@ -34,7 +34,8 @@ void ramp_init(ramp_t *ramp, int32_t scale);
 extern ramp_t chassis_vx_ramp;
 extern ramp_t chassis_vy_ramp;
 extern ramp_t chassis_vw_ramp;
-extern ramp_t lift_ramp;
+extern ramp_t lift_l_ramp;
+extern ramp_t lift_r_ramp;
 extern ramp_t stretch_1_ramp;
 extern ramp_t stretch_2_ramp;
 float ramp_calc(ramp_t *ramp);

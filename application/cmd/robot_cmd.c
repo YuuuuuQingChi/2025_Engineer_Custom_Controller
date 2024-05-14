@@ -161,10 +161,10 @@ float Limit_Set(float obj, float max, float min)
 void cmd_value_limit(){
     lift_cmd_send.left_now=lift_cmd_send.left_last;
     lift_cmd_send.right_now=lift_cmd_send.right_last;
-     lift_cmd_send.left_now=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);
-     lift_cmd_send.right_now=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
-     lift_cmd_send.left_last=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);
-     lift_cmd_send.right_last=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
+    lift_cmd_send.left_now=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);
+    lift_cmd_send.right_now=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
+    lift_cmd_send.left_last=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);
+    lift_cmd_send.right_last=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
 
     first_stretch_cmd_send.left_now=Limit_Set(first_stretch_cmd_send.left_now,24000,-38000);
     first_stretch_cmd_send.right_now=Limit_Set(first_stretch_cmd_send.right_now,STRETCH_1_MAX_ANGLE_RIGHT,STRETCH_1_MIN_ANGLE_RIGHT);
@@ -202,19 +202,17 @@ int is_range(int a)
 void control_forward(int16_t ch1, int16_t ch2);
 void Maintain_current_posture(); // 保持当前姿态的函数，不止自动模式可以用，其他地方也可以
 // 可能其他地方也用所以我声明在了最上面
+int16_t air_flag  = 2;
 
 static void RemoteControlSet()
 {
     if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_up(rc_data[TEMP].rc.switch_left)) {
         if (is_range(rc_data[TEMP].rc.rocker_l1) || is_range(rc_data[TEMP].rc.rocker_l_) || is_range(rc_data[TEMP].rc.rocker_r_)) {
-            chassis_cmd_send.chassis_mode = CHASSIS_WALK;
-            chassis_cmd_send.vx           = rc_data[TEMP].rc.rocker_l_ * 20; // 系数待测
+            chassis_cmd_send.vx           = rc_data[TEMP].rc.rocker_l_ * 20; 
             chassis_cmd_send.vy           = rc_data[TEMP].rc.rocker_l1 * 20;
             chassis_cmd_send.wz           = -rc_data[TEMP].rc.rocker_r_ * 15;
         }
-
         if (is_range(rc_data[TEMP].rc.rocker_r1)) {
-            lift_cmd_send.lift_mode = LIFT;
             lift_cmd_send.left_now += rc_data[TEMP].rc.rocker_r1 / 20.0;
             lift_cmd_send.right_now -= rc_data[TEMP].rc.rocker_r1 / 20.0;
         }
@@ -223,16 +221,19 @@ static void RemoteControlSet()
     if ((switch_is_mid(rc_data[TEMP].rc.switch_right)) && switch_is_mid(rc_data[TEMP].rc.switch_left)) {
         // 一级伸出
         if (1 - is_range(rc_data[TEMP].rc.rocker_l_) && (is_range(rc_data[TEMP].rc.rocker_r1))) {
-            first_stretch_cmd_send.first_stretch_mode = FIRST_STRETCH;
             first_stretch_cmd_send.left_now -= rc_data[TEMP].rc.rocker_r1 / 10.0;
             first_stretch_cmd_send.right_now += rc_data[TEMP].rc.rocker_r1 / 10.0;
         } 
         // 二级伸出
         if (is_range(rc_data[TEMP].rc.rocker_l1)) {
-            second_stretch_cmd_send.second_stretch_mode = SECOND_STRETCH;
             second_stretch_cmd_send.left_now += rc_data[TEMP].rc.rocker_l1 / 23.0;
             second_stretch_cmd_send.right_now -= rc_data[TEMP].rc.rocker_l1 / 23.0;
         }
+        if (1 - is_range(rc_data[TEMP].rc.rocker_r1) && (is_range(rc_data[TEMP].rc.rocker_l_))) {
+            
+            first_stretch_cmd_send.left_now -= rc_data[TEMP].rc.rocker_l_ / 10.0;
+            first_stretch_cmd_send.right_now -= rc_data[TEMP].rc.rocker_l_ / 10.0;
+        } 
     }
 
     // 右侧开关状态[上],左侧开关状态[中]
@@ -242,11 +243,7 @@ static void RemoteControlSet()
             horizontal_cmd_send.Now_MechAngle += rc_data[TEMP].rc.rocker_r_ / 60.0;
         } 
 
-        if (1 - is_range(rc_data[TEMP].rc.rocker_r1) && (is_range(rc_data[TEMP].rc.rocker_l_))) {
-            first_stretch_cmd_send.first_stretch_mode = FIRST_YAW;
-            first_stretch_cmd_send.left_now -= rc_data[TEMP].rc.rocker_l_ / 10.0;
-            first_stretch_cmd_send.right_now -= rc_data[TEMP].rc.rocker_l_ / 10.0;
-        } 
+       
         // 前端
          control_forward(rc_data[TEMP].rc.rocker_l_ / 660.0 * 120,rc_data[TEMP].rc.rocker_r1 / 660.0 * 120);
     }
@@ -276,16 +273,24 @@ static void RemoteControlSet()
             __set_FAULTMASK(1);
             NVIC_SystemReset();
         }
-        // 重新上电
+    }
+    else{
+        chassis_cmd_send.chassis_mode = CHASSIS_WALK;
+        lift_cmd_send.lift_mode = LIFT;
+        second_stretch_cmd_send.second_stretch_mode = SECOND_STRETCH;
+        first_stretch_cmd_send.first_stretch_mode = FIRST_YAW;
+        forward_cmd_send.Forward_mode = FORWARD_INIT_PITCH;
+        horizontal_cmd_send.Horizontal_mode = HORIZONTAL_MOVE;
     }
 
     // 气泵 除双下模式都可以用
-    if (is_range(rc_data[TEMP].rc.dial) && !((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left))) {
-        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, 1);
-
-    } else {
-        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, 0);
+    if ((rc_data[TEMP].rc.dial > 50) && !((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left))) {
+        air_flag = 1;
+    } else if((rc_data[TEMP].rc.dial < -50) && !((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left))) {
+        air_flag = 2;
     }
+    if(!((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)))
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, air_flag == 1 ?1:0);
 }
 
 
@@ -325,10 +330,10 @@ static void MouseKeySet()
         // 行走模式
         if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].r)flag_refresh_ui=1;
 
-        chassis_cmd_send.chassis_mode = CHASSIS_WALK;
+            chassis_cmd_send.chassis_mode = CHASSIS_WALK;
 
         if (rc_data[TEMP].key[KEY_PRESS].w||rc_data[TEMP].key[KEY_PRESS].s){
-        chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12)*ramp_calc(&chassis_vx_ramp); 
+            chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12)*ramp_calc(&chassis_vx_ramp); 
         }
         else {
             ramp_init(&chassis_vx_ramp, RAMP_TIME);
@@ -344,7 +349,7 @@ static void MouseKeySet()
         }
 
         if (rc_data[TEMP].key[KEY_PRESS].q||rc_data[TEMP].key[KEY_PRESS].e){
-        chassis_cmd_send.wz           = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12)*ramp_calc(&chassis_vw_ramp);
+            chassis_cmd_send.wz           = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12)*ramp_calc(&chassis_vw_ramp);
         }
         else {
             ramp_init(&chassis_vw_ramp, RAMP_TIME);
@@ -352,26 +357,7 @@ static void MouseKeySet()
         }
     }
 
-    else if (PC_Mode == PC_Get_Money) { // 兑矿模式0.
-                                        //     // 前端
-                                        //     if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].q) {
-                                        //         // pitch归中
-                                        //     } else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].a) {
-                                        //         // roll归中
-                                        //     } else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].z || rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].s) {
-                                        //         // 一级伸出归中 （同样也是一级yaw归中
-                                        //         first_stretch_cmd_send.first_stretch_mode = FIRST_INIT;
-                                        //     } else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].x) {
-                                        //         // 二级伸出归中 （同样也是二级yaw归中，若禁用二级yaw无影响
-                                        //         second_stretch_cmd_send.second_stretch_mode = SECOND_INIT;
-                                        //     } else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].e) {
-                                        //         // 升降归位
-                                        //         lift_cmd_send.lift_mode = LIFT_INIT;
-                                        //     } else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].d) {
-                                        //         // 横移归中
-
-
-
+    else if (PC_Mode == PC_Get_Money) { 
         // 这里左右电机默认镜像，若反转应改正负
 
         first_stretch_cmd_send.left_now += -rc_data[TEMP].key[KEY_PRESS].z * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].z *50  - rc_data[TEMP].key[KEY_PRESS].s * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 50;
@@ -391,12 +377,17 @@ static void MouseKeySet()
 
         horizontal_cmd_send.Now_MechAngle += rc_data[TEMP].key[KEY_PRESS].d * 11 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 11;
 
-        if (rc_data[TEMP].key[KEY_PRESS].v)HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, 1);
-        if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].v)HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, 1);
-        // servo_cmd_send.pitch_now_angle += rc_data[TEMP].rc.rocker_r1 / 660.0 * 10;
-        // servo_cmd_send.yaw_now_angle += rc_data[TEMP].rc.rocker_l_ / 660.0 * 10;
+        if (rc_data[TEMP].key[KEY_PRESS].v)
+        {
+            air_flag = 1;
+        }
+        else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].v)
+        {
+            air_flag = 2;
+        }
+        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, air_flag == 1 ?1:0);
 
-        control_forward((rc_data[TEMP].key[KEY_PRESS].q * 120 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q * 120), (rc_data[TEMP].key[KEY_PRESS].a * 120 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 120));
+        control_forward((rc_data[TEMP].key[KEY_PRESS].q * 80 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q * 80), (rc_data[TEMP].key[KEY_PRESS].a * 80 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 80));
     }
 
     else if (PC_Mode == PC_To_Begin_ALL) {
@@ -409,10 +400,9 @@ static void MouseKeySet()
 
     else if (PC_Mode == DA_MIAO_Reset_All) {
         // 重新上电达妙板子
+         __set_FAULTMASK(1);
+         NVIC_SystemReset();
     }
-
-    // gimbal_cmd_send.yaw += (float)rc_data[TEMP].mouse.x / 660 * 10; // 系数待测
-    // gimbal_cmd_send.pitch += (float)rc_data[TEMP].mouse.y / 660 * 10;
 }
 
 
@@ -615,7 +605,7 @@ void auto_small_resource_island() // 取小资源岛
             horizontal_cmd_send.Now_MechAngle = horizontal_fetch_data.Horizontal_Movement;
             break;
     }
-    if (first_stretch_fetch_data.new_left_encoder > 15000 &&first_stretch_fetch_data.new_left_encoder < 15500 && second_stretch_fetch_data.new_left_angle <200 && second_stretch_fetch_data.new_left_angle > -200 )
+    if (first_stretch_fetch_data.new_left_encoder > 15000 &&first_stretch_fetch_data.new_left_encoder < 15500 && second_stretch_fetch_data.new_left_angle <200 && second_stretch_fetch_data.new_left_angle > -200 && flag2 == 1)
     {
         lift_cmd_send.left_now              = Automatic_mode_target_setting(12729, lift_fetch_data.new_left_angle, 100);
         lift_cmd_send.right_now             = Automatic_mode_target_setting(-13407, lift_fetch_data.new_right_angle, 100);
@@ -707,8 +697,8 @@ void RobotCMDTask()
     SubGetMessage(forward_feed_sub, (void *)&forward_fetch_data);
     SubGetMessage(horizontal_feed_sub, (void *)&horizontal_fetch_data);
     SubGetMessage(servo_feed_sub,(void *)&servo_fetch_data);
-    // 遥控器其余状态为遥控器模式//遥控器左下右中，切换为电脑模式
-    if (switch_is_down(rc_data[TEMP].rc.switch_left) && switch_is_mid(rc_data[TEMP].rc.switch_right)) {
+    // 遥控器其余状态为遥控器模式//遥控器左下右上，切换为电脑模式
+    if (switch_is_down(rc_data[TEMP].rc.switch_left) && switch_is_up(rc_data[TEMP].rc.switch_right)) {
 
         MouseKeySet();
 
@@ -716,12 +706,8 @@ void RobotCMDTask()
         RemoteControlSet();
     }
     // 遥控器左下右上   自动模式
-    if (switch_is_down(rc_data[TEMP].rc.switch_left)&&switch_is_up(rc_data[TEMP].rc.switch_right)){
     auto_mode();
-
     cmd_value_limit();
-    }
-
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(lift_cmd_pub, (void *)&lift_cmd_send);
     PubPushMessage(first_stretch_cmd_pub, (void *)&first_stretch_cmd_send);

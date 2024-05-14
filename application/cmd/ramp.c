@@ -1,9 +1,10 @@
 #include "ramp.h"
-
+//
 ramp_t chassis_vx_ramp=RAMP_GEN_DAFAULT;
 ramp_t chassis_vy_ramp=RAMP_GEN_DAFAULT;
 ramp_t chassis_vw_ramp=RAMP_GEN_DAFAULT;
-ramp_t lift_ramp=RAMP_GEN_DAFAULT;
+ramp_t lift_l_ramp=RAMP_GEN_DAFAULT;
+ramp_t lift_r_ramp=RAMP_GEN_DAFAULT;
 ramp_t stretch_1_ramp=RAMP_GEN_DAFAULT;
 ramp_t stretch_2_ramp=RAMP_GEN_DAFAULT;
 
