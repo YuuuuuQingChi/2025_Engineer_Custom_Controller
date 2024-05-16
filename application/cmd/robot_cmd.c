@@ -71,7 +71,7 @@ static ui_Upload_Data_s ui_fetch_data; // 从升降获取的反馈信息
 
 static Robot_Status_e robot_state; // 机器人整体工作状态
 
-
+float last_angle;      // pitch的最后一次编码器角度
 
 
 /**
@@ -102,6 +102,8 @@ void RobotCMDInit()
     ui_feed_sub     = SubRegister("ui_feed", sizeof(ui_Upload_Data_s));
 
     robot_state = ROBOT_READY; // 启动时机器人进入工作模式,后续加入所有应用初始化完成之后再进入
+    last_angle = forward_fetch_data.new_left_angle;
+
     // chassis_cmd_send.chassis_mode=CHASSIS_WALK;
     // first_stretch_cmd_send.first_stretch_mode=FIRST_STRETCH;
     // first_stretch_cmd_send.left_now=-STRETCH_1_INIT_ANGLE_LEFT;
@@ -428,7 +430,7 @@ static void MouseKeySet()
 
 int8_t mode; // pitch和roll的模式
 int8_t last_mode;
-float last_angle;      // pitch的最后一次编码器角度
+
 float relevant_angle;  // pitch和roll的相对角度
 float final_angle;     // 目标角度
 float roll_last_angle; // roll的最后一次编码器角度
