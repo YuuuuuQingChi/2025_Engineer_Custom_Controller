@@ -22,6 +22,7 @@
 #include "forward.h"
 #include "referee_UI.h"
 #include "ui.h"
+#include "servo.h"
 int32_t flag_referee_init =0;
 static referee_info_t *referee_data; // 用于获取裁判系统的数据
 
@@ -35,6 +36,7 @@ void RobotInit()
     BSPInit();
     RobotCMDInit();
     ChassisInit();
+    Servo_Init();
     referee_data = RefereeHardwareInit(&huart10); // 裁判系统初始化,会同时初始化UI
     flag_referee_init=1;                 
     Lift_Init();
@@ -50,11 +52,12 @@ void RobotTask()
 {
     
     RobotCMDTask();
-    // ChassisTask();
+    ChassisTask();
     Lift_Task();
     First_Stretch_Task();
     Second_Stretch_Task();
     Horizontal_Task();
+    Servo_Task();
     Forward_Task();
     
 }

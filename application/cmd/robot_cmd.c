@@ -496,8 +496,7 @@ float Automatic_mode_target_setting(float target, float measure, float expected_
 
 void auto_mode() // 自动模式最终函数
 {
-    ui_cmd_send.auto_confirm_flag=0;
-    ui_cmd_send.auto_decide_flag=1; 
+    
     if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)) // 右上左下
     {
         auto_mode_decide();
@@ -549,7 +548,8 @@ void auto_mode_decide()
 }
 void auto_small_resource_island() // 取小资源岛
 {
-    
+    if(ui_cmd_send.auto_decide_flag == 1 ||ui_cmd_send.auto_decide_flag == 2 || ui_cmd_send.auto_decide_flag == 3)
+    {
     if(flag3 == 1)
     {
         lift_cmd_send.left_now              = Automatic_mode_target_setting(15229, lift_fetch_data.new_left_angle, 100);
@@ -626,8 +626,7 @@ void auto_small_resource_island() // 取小资源岛
     else{
         flag3 = 1;
     }
-    
-   
+    }
     }
 
    
@@ -720,7 +719,7 @@ void RobotCMDTask()
     }
     // 遥控器左下右上   自动模式
     auto_mode();
-    cmd_value_limit();
+    //cmd_value_limit();
     PubPushMessage(ui_cmd_pub,(void *)&ui_cmd_send);
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(lift_cmd_pub, (void *)&lift_cmd_send);

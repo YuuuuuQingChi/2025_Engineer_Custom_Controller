@@ -33,12 +33,12 @@ void Forward_Init()
     PID_Init_Config_s encoder_pid_config = {
         
 
-                          .Kp            = 135.5, // 0
-                          .Ki            = 8.4, // 0
-                          .Kd            = 2.1, // 0
+                          .Kp            = 105.5, // 0
+                          .Ki            = 6.5, // 0
+                          .Kd            = 8, // 0
                           .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
                           .IntegralLimit = 1500,
-                          .MaxOut        = 8000, // 20000
+                          .MaxOut        = 6000, // 20000
                       };
                       
     encoder_pid = PIDRegister(&encoder_pid_config);
@@ -51,12 +51,12 @@ void Forward_Init()
         .controller_param_init_config = {
             
             .speed_PID = {
-                .Kp            = 1.0,
-                .Ki            = 0.07,
+                .Kp            = 1.74,     
+                .Ki            = 0.11,
                 .Kd            = 0,
-                .IntegralLimit = 1000,
+                .IntegralLimit = 3000,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
-                .MaxOut        = 6000,
+                .MaxOut        = 7000,
             },
             
         },
@@ -76,13 +76,13 @@ void Forward_Init()
         .controller_param_init_config = {
             
             .speed_PID = {
-                .Kp            = 1.0,
-                .Ki            = 0.07,
+                .Kp            = 1.75,
+                .Ki            = 0.13,
                 .Kd            = 0,
-                .IntegralLimit = 1000,
+                .IntegralLimit = 3000,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement | PID_OutputFilter,
 
-                .MaxOut        = 6000,
+                .MaxOut        = 7000,
             },
         },
         .controller_setting_init_config = {
