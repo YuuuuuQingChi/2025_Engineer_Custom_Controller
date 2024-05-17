@@ -169,8 +169,8 @@ float Limit_Set(float obj, float max, float min)
  *  全局限位：自动模式、键鼠、遥控器通用
  */
 void cmd_value_limit(){
-    lift_cmd_send.left_now=lift_cmd_send.left_last;
-    lift_cmd_send.right_now=lift_cmd_send.right_last;
+    // lift_cmd_send.left_now=lift_cmd_send.left_last;
+    // lift_cmd_send.right_now=lift_cmd_send.right_last;
     lift_cmd_send.left_now=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);
     lift_cmd_send.right_now=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
     lift_cmd_send.left_last=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);
@@ -318,7 +318,7 @@ void PC_Mode_Set(PC_Mode_t *mode)
     } else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].s) {
         *mode = PC_Get_Money;
     } else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].f) {
-        *mode = PC_To_Begin_ALL;
+        *mode = PC_To_AUTO_MODE;
     } else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].r) {
         *mode = DA_MIAO_Reset_All;
     }
@@ -340,7 +340,7 @@ static void MouseKeySet()
     if (ui_cmd_send.PC_Mode == PC_Walk) {
         chassis_cmd_send.chassis_mode = CHASSIS_WALK;
         chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12);
-        chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].d * 660 * 12);
+        chassis_cmd_send.vx           = (-rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 + rc_data[TEMP].key[KEY_PRESS].d * 660 * 12);
         chassis_cmd_send.wz           = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12);
     }
 
@@ -350,28 +350,20 @@ static void MouseKeySet()
 
             chassis_cmd_send.chassis_mode = CHASSIS_WALK;
 
-        if (rc_data[TEMP].key[KEY_PRESS].w||rc_data[TEMP].key[KEY_PRESS].s){
-            chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12)*ramp_calc(&chassis_vx_ramp); 
+        if (rc_data[TEMP].key[KEY_PRESS].w){
+            chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].w * 660 * 12)*ramp_calc(&chassis_vx_ramp); 
         }
         else {
             ramp_init(&chassis_vx_ramp, RAMP_TIME);
-            chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12)*ramp_calc(&chassis_vx_ramp);
+            chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].w * 660 * 12)*ramp_calc(&chassis_vx_ramp);
         }
 
-        if (rc_data[TEMP].key[KEY_PRESS].a||rc_data[TEMP].key[KEY_PRESS].d){
-        chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].d * 660 * 12)*ramp_calc(&chassis_vy_ramp);
+        if (rc_data[TEMP].key[KEY_PRESS].a){
+        chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 660 * 12)*ramp_calc(&chassis_vy_ramp);
         }
         else {
             ramp_init(&chassis_vy_ramp, RAMP_TIME);
-            chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].d * 660 * 12)*ramp_calc(&chassis_vy_ramp);
-        }
-
-        if (rc_data[TEMP].key[KEY_PRESS].q||rc_data[TEMP].key[KEY_PRESS].e){
-            chassis_cmd_send.wz           = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12)*ramp_calc(&chassis_vw_ramp);
-        }
-        else {
-            ramp_init(&chassis_vw_ramp, RAMP_TIME);
-            chassis_cmd_send.wz           = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12)*ramp_calc(&chassis_vw_ramp);
+            chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 660 * 12)*ramp_calc(&chassis_vy_ramp);
         }
 
         first_stretch_cmd_send.left_now += -rc_data[TEMP].key[KEY_PRESS].z * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].z *50  - rc_data[TEMP].key[KEY_PRESS].s * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 50;
@@ -379,15 +371,9 @@ static void MouseKeySet()
 
         second_stretch_cmd_send.left_now += rc_data[TEMP].key[KEY_PRESS].x * 16 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].x * 16;
         second_stretch_cmd_send.right_now -= rc_data[TEMP].key[KEY_PRESS].x * 16 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].x * 16;
-
-        if (rc_data[TEMP].key[KEY_PRESS].e||rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e){
-                lift_cmd_send.left_now += (rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28)*ramp_calc(&lift_l_ramp);
-                lift_cmd_send.right_now -= (rc_data[TEMP].key[KEY_PRESS].e * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 28)*ramp_calc(&lift_r_ramp);
-        }
-        else {
-            ramp_init(&lift_r_ramp,RAMP_TIME);
-            ramp_init(&lift_l_ramp,RAMP_TIME);
-        }
+        
+        lift_cmd_send.left_now += (rc_data[TEMP].key[KEY_PRESS].c * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].c * 28);
+        lift_cmd_send.right_now -= (rc_data[TEMP].key[KEY_PRESS].c * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].c * 28);
 
         horizontal_cmd_send.Now_MechAngle += rc_data[TEMP].key[KEY_PRESS].d * 11 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 11;
 
@@ -400,18 +386,9 @@ static void MouseKeySet()
             air_flag = 2;
         }
         HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, air_flag == 1 ?1:0);
-
-        control_forward((rc_data[TEMP].key[KEY_PRESS].q * 80 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q * 80), (rc_data[TEMP].key[KEY_PRESS].a * 80 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 80));
+ 
+        control_forward((rc_data[TEMP].key[KEY_PRESS].q * 40 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q * 40), (rc_data[TEMP].key[KEY_PRESS].e * 80 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 80));
     }
-
-    else if (ui_cmd_send.PC_Mode == PC_To_Begin_ALL) {
-        // 全回到初始位置
-        // first_stretch_cmd_send.first_stretch_mode   = FIRST_INIT;
-        // second_stretch_cmd_send.second_stretch_mode = SECOND_INIT;
-        // lift_cmd_send.lift_mode                     = LIFT_INIT;
-        // horizontal_cmd_send.Horizontal_mode         = HORIZONTAL_INIT;
-    }
-
     else if (ui_cmd_send.PC_Mode == DA_MIAO_Reset_All) {
         // 重新上电达妙板子
          __set_FAULTMASK(1);
@@ -467,15 +444,15 @@ void control_forward(int16_t ch1, int16_t ch2)
 void mode_change()
 {
 
-    if ((!is_range(rc_data[TEMP].rc.rocker_l_) && is_range(rc_data[TEMP].rc.rocker_r1)) || (((rc_data[TEMP].key[KEY_PRESS].q) || (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q)) && (!(rc_data[TEMP].key[KEY_PRESS].a) || !(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a)))) {
+    if ((!is_range(rc_data[TEMP].rc.rocker_l_) && is_range(rc_data[TEMP].rc.rocker_r1)) || (((rc_data[TEMP].key[KEY_PRESS].q) || (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q)) && (!(rc_data[TEMP].key[KEY_PRESS].e) || !(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e)))) {
         mode                          = PITCH_RUN_MODE;
         forward_cmd_send.Forward_mode = PITCH;
-    } else if ((is_range(rc_data[TEMP].rc.rocker_l_) && !is_range(rc_data[TEMP].rc.rocker_r1)) || ((!(rc_data[TEMP].key[KEY_PRESS].q) || !(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q)) && ((rc_data[TEMP].key[KEY_PRESS].a) || (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a)))) {
+    } else if ((is_range(rc_data[TEMP].rc.rocker_l_) && !is_range(rc_data[TEMP].rc.rocker_r1)) || ((!(rc_data[TEMP].key[KEY_PRESS].q) || !(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q)) && ((rc_data[TEMP].key[KEY_PRESS].e) || (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e)))) {
         mode                          = ROLL_RUN_MODE;
         forward_cmd_send.Forward_mode = ROLL;
     } else {
         mode = STOP_MODE;
-        forward_cmd_send.Forward_mode = ROLL;
+        forward_cmd_send.Forward_mode = PITCH;
 
     }
 }
@@ -490,7 +467,7 @@ void mode_change()
  */
 
 int16_t flag_r1, flag_r2, flag_r3, flag_r4;    // 数据小心会溢出
-int16_t flag1 = 1,flag2,flag3 = 1;                                            
+int16_t flag1 = 1,flag2,flag3 = 1,flag4,flag5 = 1;                                            
 void auto_mode_decide();                                                                     // 自动模式选择函数
 void Put_it_back_in_the_silo();                                                              // 放回矿仓
 void auto_small_resource_island();                                                           // 取小资源岛
@@ -498,9 +475,6 @@ float Automatic_mode_target_setting(float target, float measure, float expected_
 
 void auto_mode() // 自动模式最终函数
 {
-    
-    if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)) // 右上左下
-    {
         auto_mode_decide();
         if (rc_data[TEMP].rc.rocker_l_ > 200 || rc_data[TEMP].rc.rocker_l_ < -200) {
             ui_cmd_send.auto_confirm_flag=1;
@@ -509,9 +483,9 @@ void auto_mode() // 自动模式最终函数
         } else {
             ui_cmd_send.auto_confirm_flag=0;
             flag3 = 1;
+            flag5 = 1;
             Maintain_current_posture(); // 维持当前姿态
         }
-    }
 }
 void auto_mode_decide()
 {
@@ -639,6 +613,21 @@ void Put_it_back_in_the_silo()
 {
     if(ui_cmd_send.auto_decide_flag == 4)
     {
+    if(flag5 == 1)
+    {
+        lift_cmd_send.left_now              = Automatic_mode_target_setting(15229, lift_fetch_data.new_left_angle, 100);
+        lift_cmd_send.right_now             = Automatic_mode_target_setting(-14907, lift_fetch_data.new_right_angle, 100);
+        if(lift_fetch_data.new_left_angle > 15000 && lift_fetch_data.new_left_angle < 15500)
+        {
+        flag4 = 1;
+        }
+        else
+        {
+        flag4 = 0;
+        }
+    }    
+    if(flag4 == 1|| (lift_fetch_data.new_left_angle > 15000 && lift_fetch_data.new_left_angle < 15500))
+    {
     horizontal_cmd_send.Now_MechAngle = Automatic_mode_target_setting(27, horizontal_fetch_data.Horizontal_Movement, 60);
     if (horizontal_fetch_data.Horizontal_Movement < 1000 && horizontal_fetch_data.Horizontal_Movement > -1000) // 横移回到了二级的里面
     {
@@ -650,9 +639,11 @@ void Put_it_back_in_the_silo()
         {
             lift_cmd_send.left_now            = Automatic_mode_target_setting(7895, lift_fetch_data.new_left_angle, 100);
             lift_cmd_send.right_now           = Automatic_mode_target_setting(-8019, lift_fetch_data.new_right_angle, 100);
+            flag5 = 0;
         }
         else
         {
+            flag5 = 1;
             lift_cmd_send.left_now            = lift_fetch_data.new_left_angle;
             lift_cmd_send.right_now           = lift_fetch_data.new_right_angle;
         }
@@ -663,6 +654,7 @@ void Put_it_back_in_the_silo()
         second_stretch_cmd_send.right_now = second_stretch_fetch_data.new_right_angle;
         lift_cmd_send.left_now            = lift_fetch_data.new_left_angle;
         lift_cmd_send.right_now           = lift_fetch_data.new_right_angle;
+    }
     }
     }
 }
@@ -700,7 +692,7 @@ float Automatic_mode_target_setting(float target, float measure, float expected_
  * @brief CMD核心任务
  *
  */
-void RobotCMDTask()
+ void RobotCMDTask()
 {
     // 从其他应用获取回传数据
     SubGetMessage(chassis_feed_sub, (void *)&chassis_fetch_data);
@@ -720,8 +712,11 @@ void RobotCMDTask()
         RemoteControlSet();
     }
     // 遥控器左下右上   自动模式
+    if(ui_cmd_send.PC_Mode == PC_To_AUTO_MODE)
+    {
     auto_mode();
-    //cmd_value_limit();
+    }
+    cmd_value_limit();
     PubPushMessage(ui_cmd_pub,(void *)&ui_cmd_send);
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(lift_cmd_pub, (void *)&lift_cmd_send);
