@@ -19,7 +19,7 @@ void StartROBOTTASK(void *argument)
     static float robot_dt;
     static float robot_start;
     LOGINFO("[freeRTOS] ROBOT core Task Start");
-    // 200Hz-500Hz,若有额外的控制任务如平衡步兵可能需要提升至1kHz
+
     for (;;) {
         robot_start = DWT_GetTimeline_ms();
         RobotTask();

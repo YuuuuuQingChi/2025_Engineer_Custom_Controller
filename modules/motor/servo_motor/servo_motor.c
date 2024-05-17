@@ -17,6 +17,7 @@ ServoInstance *ServoInit(Servo_Init_Config_s *Servo_Init_Config)
     servo->Servo_type = Servo_Init_Config->Servo_type;
     servo->htim = Servo_Init_Config->htim;
     servo->Channel = Servo_Init_Config->Channel;
+    servo->Servo_Angle_Type=Servo_Init_Config->Servo_Angle_Type;
 
     HAL_TIM_PWM_Start(Servo_Init_Config->htim, Servo_Init_Config->Channel);
     servo_motor_instance[servo_idx++] = servo;
@@ -50,7 +51,9 @@ void Servo_Motor_FreeAngle_Set(ServoInstance *Servo_Motor, int16_t S_angle)
     }
     if (S_angle < 0)
         S_angle = 0;
+    
     Servo_Motor->Servo_Angle.free_angle = S_angle;
+    Servo_Motor->Servo_Angle.servo360speed = S_angle;
 }
 
 /**
@@ -80,11 +83,13 @@ void Servo_Motor_Type_Select(ServoInstance *Servo_Motor, int16_t mode)
  * @brief 舵机输出控制
  *
  */
+ServoInstance *Servo_Motor;
+size_t i = 0;
 void ServeoMotorControl()
 {
-    ServoInstance *Servo_Motor;
+    
 
-    for (size_t i = 0; i < servo_idx; i++)
+    for (i=0; i < servo_idx; i++)
     {
         if (servo_motor_instance[i])
         {
@@ -94,22 +99,24 @@ void ServeoMotorControl()
             {
             case Servo180:
                 if (Servo_Motor->Servo_Angle_Type == Start_mode)
-                    compare_value[i] = 0.5 * 20000 / 20 + Servo_Motor->Servo_Angle.Init_angle * 20000 / 20 / 90;
+                    compare_value[i] = 0.5 * 20000 / 20.0 + Servo_Motor->Servo_Angle.Init_angle * 20000 / 20.0/ 90;
                 if (Servo_Motor->Servo_Angle_Type == Final_mode)
-                    compare_value[i] = 0.5 * 20000 / 20 + Servo_Motor->Servo_Angle.Final_angle * 20000 / 20 / 90;
+                    compare_value[i] = 0.5 * 20000 / 20.0 + Servo_Motor->Servo_Angle.Final_angle * 20000 / 20.0 / 90;
                 if (Servo_Motor->Servo_Angle_Type == Free_Angle_mode)
-                    compare_value[i] = 0.5 * 20000 / 20 + Servo_Motor->Servo_Angle.free_angle * 20000 / 20 / 90;
+                    compare_value[i] = 0.5 * 20000 / 20.0 + Servo_Motor->Servo_Angle.free_angle * 20000 / 20.0 / 90;
                 __HAL_TIM_SET_COMPARE(Servo_Motor->htim, Servo_Motor->Channel, compare_value[i]);
                 break;
+
             case Servo270:
                 if (Servo_Motor->Servo_Angle_Type == Start_mode)
-                    compare_value[i] = 0.5 * 20000 / 20 + Servo_Motor->Servo_Angle.Init_angle * 20000 / 20 / 135;
+                    compare_value[i] = 0.5 * 20000 / 20.0 + Servo_Motor->Servo_Angle.Init_angle * 20000 / 20.0 / 135;
                 if (Servo_Motor->Servo_Angle_Type == Final_mode)
-                    compare_value[i] = 0.5 * 20000 / 20 + Servo_Motor->Servo_Angle.Final_angle * 20000 / 20 / 135;
+                    compare_value[i] = 0.5 * 20000 / 20.0 + Servo_Motor->Servo_Angle.Final_angle * 20000 / 20.0 / 135;
                 if (Servo_Motor->Servo_Angle_Type == Free_Angle_mode)
-                    compare_value[i] = 0.5 * 20000 / 20 + Servo_Motor->Servo_Angle.free_angle * 20000 / 20 / 135;
+                    compare_value[i] = 0.5 * 20000 / 20.0 + Servo_Motor->Servo_Angle.free_angle * 20000 / 20.0 / 135;
                 __HAL_TIM_SET_COMPARE(Servo_Motor->htim, Servo_Motor->Channel, compare_value[i]);
                 break;
+
             case Servo360:
                 /*500-2500的占空比 500-1500对应正向转速 1500-2500对于反向转速*/
                 compare_value[i] = 500 + 20 * Servo_Motor->Servo_Angle.servo360speed;

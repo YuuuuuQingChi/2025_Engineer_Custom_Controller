@@ -42,38 +42,37 @@ static Subscriber_t *second_stretch_feed_sub;                  // 二级反馈�
 static Second_Stretch_Ctrl_Cmd_s second_stretch_cmd_send;      // 传递给二级的控制信息
 static Second_Stretch_Upload_Data_s second_stretch_fetch_data; // 从二级获取的反馈信息
 
-static Publisher_t *lift_cmd_pub;          // 升降控制消息发布者
-static Subscriber_t *lift_feed_sub;        // 升降反馈信息订阅者
-static Lift_Ctrl_Cmd_s lift_cmd_send;      // 传递给升降的控制信息
-static Lift_Upload_Data_s lift_fetch_data; // 从升降获取的反馈信息
+static Publisher_t *lift_cmd_pub;          
+static Subscriber_t *lift_feed_sub;        
+static Lift_Ctrl_Cmd_s lift_cmd_send;      
+static Lift_Upload_Data_s lift_fetch_data;
 
-static Publisher_t *horizontal_cmd_pub;                // 横移控制消息发布者
-static Subscriber_t *horizontal_feed_sub;              // 横移反馈信息订阅者
-static Horizontal_Ctrl_Cmd_s horizontal_cmd_send;      // 传递给横移的控制信息
-static Horizontal_Upload_Data_s horizontal_fetch_data; // 从横移获取的反馈信息
+static Publisher_t *horizontal_cmd_pub;                
+static Subscriber_t *horizontal_feed_sub;              
+static Horizontal_Ctrl_Cmd_s horizontal_cmd_send;      
+static Horizontal_Upload_Data_s horizontal_fetch_data; 
 
-static Publisher_t *forward_cmd_pub;             // 前端控制消息发布者
-static Subscriber_t *forward_feed_sub;           // 前端反馈信息订阅者
-static Forward_Ctrl_Cmd_s forward_cmd_send;      // 传递给前端的控制信息
-static Forward_Upload_Data_s forward_fetch_data; // 从前端获取的反馈信息
+static Publisher_t *forward_cmd_pub;             
+static Subscriber_t *forward_feed_sub;           
+static Forward_Ctrl_Cmd_s forward_cmd_send;      
+static Forward_Upload_Data_s forward_fetch_data; 
 
-static Publisher_t *servo_cmd_pub;           // 升降控制消息发布者
-static Subscriber_t *servo_feed_sub;         // 升降反馈信息订阅者
-static Servo_Cmd_s servo_cmd_send;           // 传递给升降的控制信息
-static Servo_Upload_Data_s servo_fetch_data; // 从升降获取的反馈信息
+static Publisher_t *servo_cmd_pub;           
+static Subscriber_t *servo_feed_sub;         
+static Servo_Cmd_s servo_cmd_send;           
+static Servo_Upload_Data_s servo_fetch_data; 
 
-static Publisher_t *ui_cmd_pub;           // 升降控制消息发布者
-static Subscriber_t *ui_feed_sub;         // 升降反馈信息订阅者
-static ui_Cmd_s ui_cmd_send;           // 传递给升降的控制信息
-static ui_Upload_Data_s ui_fetch_data; // 从升降获取的反馈信息
+static Publisher_t *ui_cmd_pub;           
+static Subscriber_t *ui_feed_sub;       
+static ui_Cmd_s ui_cmd_send;           
+static ui_Upload_Data_s ui_fetch_data; 
 
 
 
 static Robot_Status_e robot_state; // 机器人整体工作状态
 
 float last_angle;      // pitch的最后一次编码器角度
-
-
+extern int mouse_count_r;
 /**
  * @brief CMD初始化
  *
@@ -211,8 +210,6 @@ int is_range(int a)
  */
 void control_forward(int16_t ch1, int16_t ch2);
 void Maintain_current_posture(); // 保持当前姿态的函数，不止自动模式可以用，其他地方也可以
-// 可能其他地方也用所以我声明在了最上面
-int16_t air_flag  = 2;
 
 static void RemoteControlSet()
 {
@@ -260,8 +257,8 @@ static void RemoteControlSet()
     
     // 右侧开关状态[下],左侧开关状态[中]
     if ((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_mid(rc_data[TEMP].rc.switch_left)) {
-        servo_cmd_send.pitch_now_angle += rc_data[TEMP].rc.rocker_r1 / 660.0 * 10;
-        servo_cmd_send.yaw_now_angle += rc_data[TEMP].rc.rocker_l_ / 660.0 * 10;
+        servo_cmd_send.pitch_now_angle += rc_data[TEMP].rc.rocker_r1 / 660.0 * 1;
+        servo_cmd_send.yaw_now_angle += rc_data[TEMP].rc.rocker_l_ / 660.0 * 1;
     }
 
     // 双下
@@ -295,12 +292,12 @@ static void RemoteControlSet()
 
     // 气泵 除双下模式都可以用
     if ((rc_data[TEMP].rc.dial > 50) && !((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left))) {
-        air_flag = 1;
+        ui_cmd_send.air_flag = 1;
     } else if((rc_data[TEMP].rc.dial < -50) && !((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left))) {
-        air_flag = 2;
+        ui_cmd_send.air_flag = 2;
     }
     if(!((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)))
-    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, air_flag == 1 ?1:0);
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, ui_cmd_send.air_flag == 1 ?1:0);
 }
 
 
@@ -313,15 +310,7 @@ static void RemoteControlSet()
 
 void PC_Mode_Set(PC_Mode_t *mode)
 {
-    if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].w) {
-        *mode = PC_Walk;
-    } else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].s) {
-        *mode = PC_Get_Money;
-    } else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].f) {
-        *mode = PC_To_AUTO_MODE;
-    } else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].r) {
-        *mode = DA_MIAO_Reset_All;
-    }
+    *mode = rc_data[TEMP].mouse.count;
     // 以上是四种大模式的判断
 }
 
@@ -336,7 +325,7 @@ static void MouseKeySet()
 {
     PC_Mode_Set(&ui_cmd_send.PC_Mode);
     ui_cmd_send.flag_refresh_ui=ui_fetch_data.flag_refresh_ui;
-    if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].r)ui_cmd_send.flag_refresh_ui=1;
+    if (rc_data[TEMP].key[KEY_PRESS].r)ui_cmd_send.flag_refresh_ui=1;
     if (ui_cmd_send.PC_Mode == PC_Walk) {
         chassis_cmd_send.chassis_mode = CHASSIS_WALK;
         chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12);
@@ -377,23 +366,25 @@ static void MouseKeySet()
 
         horizontal_cmd_send.Now_MechAngle += rc_data[TEMP].key[KEY_PRESS].d * 11 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 11;
 
-        if (rc_data[TEMP].key[KEY_PRESS].v)
-        {
-            air_flag = 1;
-        }
-        else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].v)
-        {
-            air_flag = 2;
-        }
-        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, air_flag == 1 ?1:0);
+        
  
         control_forward((rc_data[TEMP].key[KEY_PRESS].q * 40 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q * 40), (rc_data[TEMP].key[KEY_PRESS].e * 80 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 80));
     }
-    else if (ui_cmd_send.PC_Mode == DA_MIAO_Reset_All) {
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].r) {
         // 重新上电达妙板子
          __set_FAULTMASK(1);
          NVIC_SystemReset();
     }
+
+    if (rc_data[TEMP].key[KEY_PRESS].v)
+        {
+            ui_cmd_send.air_flag = 1;
+        }
+        else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].v)
+        {
+            ui_cmd_send.air_flag = 2;
+        }
+        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, ui_cmd_send.air_flag == 1 ?1:0);
 }
 
 

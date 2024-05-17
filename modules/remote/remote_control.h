@@ -90,10 +90,9 @@ typedef union
 } Key_t;
 
 typedef enum{
-    PC_Walk=0,         //行走模式
-    PC_Get_Money,      //取矿模式
-    PC_To_AUTO_MODE,   //自动模式
-    DA_MIAO_Reset_All, //达妙重新上电
+    PC_Walk=1,         //行走模式
+    PC_Get_Money=2,      //取矿模式
+    PC_To_AUTO_MODE=0,   //自动模式
 }PC_Mode_t;
 
 // @todo 当前结构体嵌套过深,需要进行优化
@@ -116,6 +115,7 @@ typedef struct
         int16_t y;
         uint8_t press_l;
         uint8_t press_r;
+        uint8_t count;
     } mouse;
 
     Key_t key[4]; // 改为位域后的键盘索引,空间减少8倍,速度增加16~倍
@@ -139,5 +139,6 @@ RC_ctrl_t *RemoteControlInit(UART_HandleTypeDef *rc_usart_handle);
  * @return uint8_t 1:在线 0:离线
  */
 uint8_t RemoteControlIsOnline();
+
 
 #endif

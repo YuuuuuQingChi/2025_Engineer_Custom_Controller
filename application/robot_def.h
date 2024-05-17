@@ -197,6 +197,7 @@ typedef struct
     int32_t auto_decide_flag ; 
     int32_t auto_confirm_flag;
     int flag_refresh_ui;
+    int16_t air_flag;
 } ui_Cmd_s;
 
 typedef struct

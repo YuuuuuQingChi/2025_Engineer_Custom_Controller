@@ -7,11 +7,12 @@
 #include "bsp_log.h"
 
 #define REMOTE_CONTROL_FRAME_SIZE 18u // 遥控器接收的buffer大小
-
 // 遥控器数据
 static RC_ctrl_t rc_ctrl[2];     //[0]:当前数据TEMP,[1]:上一次的数据LAST.用于按键持续按下和切换的判断
 static uint8_t rc_init_flag = 0; // 遥控器初始化标志位
-
+static int count_1 =0;
+static int count_2 =0;
+int mouse_count_r =0;
 // 遥控器拥有的串口实例,因为遥控器是单例,所以这里只有一个,就不封装了
 static USARTInstance *rc_usart_instance;
 static DaemonInstance *rc_daemon_instance;
@@ -57,6 +58,20 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
     //  位域的按键值解算,直接memcpy即可,注意小端低字节在前,即lsb在第一位,msb在最后
     *(uint16_t *)&rc_ctrl[TEMP].key[KEY_PRESS] = (uint16_t)(sbus_buf[14] | (sbus_buf[15] << 8));
     
+    //鼠标右键计数 
+    if (rc_ctrl[LAST].mouse.press_r ==0 && rc_ctrl[TEMP].mouse.press_r ==1){
+        if (count_1!=2){
+        count_1++;
+        }
+        else {
+            count_2++;
+            count_2%=4;
+        }
+    }
+    rc_ctrl[TEMP].mouse.count=count_2-(count_1)%2+1;
+    //本次值迭代
+    //memcpy(&rc_ctrl[LAST].mouse, &rc_ctrl[TEMP].mouse, sizeof(rc_ctrl[TEMP].mouse));
+
     
     if ((rc_ctrl[TEMP].key[KEY_PRESS].ctrl)&& (1-rc_ctrl[TEMP].key[KEY_PRESS].shift))// ctrl键按下
        {memcpy(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_CTRL], &rc_ctrl[TEMP].key[KEY_PRESS], sizeof(Key_t));
@@ -65,7 +80,7 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
     else
         memset(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_CTRL], 0, sizeof(Key_t));
 
-    if ((1-rc_ctrl[TEMP].key[KEY_PRESS].ctrl)&& (rc_ctrl[TEMP].key[KEY_PRESS].shift)) // shift键按下
+    if ((rc_ctrl[TEMP].mouse.press_l)) // shift键按下
        {memcpy(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_SHIFT], &rc_ctrl[TEMP].key[KEY_PRESS], sizeof(Key_t));
         memset(&rc_ctrl[TEMP].key[KEY_PRESS], 0, sizeof(Key_t));
        }
@@ -80,29 +95,10 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
         memset(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL], 0, sizeof(Key_t));
 
     
-    uint16_t key_now = rc_ctrl[TEMP].key[KEY_PRESS].keys,                   // 当前按键是否按下
-        key_last = rc_ctrl[LAST].key[KEY_PRESS].keys,                       // 上一次按键是否按下
-        key_with_ctrl = rc_ctrl[TEMP].key[KEY_PRESS_WITH_CTRL].keys,        // 当前ctrl组合键是否按下
-        key_with_shift = rc_ctrl[TEMP].key[KEY_PRESS_WITH_SHIFT].keys,      //  当前shift组合键是否按下
-        key_last_with_ctrl = rc_ctrl[LAST].key[KEY_PRESS_WITH_CTRL].keys,   // 上一次ctrl组合键是否按下
-        key_last_with_shift = rc_ctrl[LAST].key[KEY_PRESS_WITH_SHIFT].keys; // 上一次shift组合键是否按下
-
-    // for (uint16_t i = 0, j = 0x1; i < 16; j <<= 1, i++)
-    // {
-    //     // if (i == 4 || i == 5) // 4,5位为ctrl和shift,直接跳过
-    //     //     continue;
-    //     // // 如果当前按键按下,上一次按键没有按下,且ctrl和shift组合键没有按下,则按键按下计数加1(检测到上升沿)
-    //     // if ((key_now & j) && !(key_last & j) && !(key_with_ctrl & j) && !(key_with_shift & j))
-    //     //     rc_ctrl[TEMP].key_count[KEY_PRESS][i]++;
-    //     // // 当前ctrl组合键按下,上一次ctrl组合键没有按下,则ctrl组合键按下计数加1(检测到上升沿)
-    //     // if ((key_with_ctrl & j) && !(key_last_with_ctrl & j))
-    //     //     rc_ctrl[TEMP].key_count[KEY_PRESS_WITH_CTRL][i]++;
-    //     // // 当前shift组合键按下,上一次shift组合键没有按下,则shift组合键按下计数加1(检测到上升沿)
-    //     // if ((key_with_shift & j) && !(key_last_with_shift & j))
-    //     //     rc_ctrl[TEMP].key_count[KEY_PRESS_WITH_SHIFT][i]++;
-    // }
 
     memcpy(&rc_ctrl[LAST], &rc_ctrl[TEMP], sizeof(RC_ctrl_t)); // 保存上一次的数据,用于按键持续按下和切换的判断
+
+
 }
 
 /**

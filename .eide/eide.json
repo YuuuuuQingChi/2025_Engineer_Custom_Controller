@@ -10,9 +10,7 @@
     "bsp",
     "modules",
     "application",
-    "USB_DEVICE",
-    "application/UI",
-    "application/servo"
+    "USB_DEVICE"
   ],
   "virtualFolder": {
     "name": "<virtual_root>",

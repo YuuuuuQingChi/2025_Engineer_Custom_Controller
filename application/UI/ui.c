@@ -94,8 +94,16 @@ void My_UIGraphRefresh()
     UICharDraw(&UI_State_sta[0], "ss4", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, 100, 700, "Sucker");
     UICharRefresh(&referee_info.referee_id, UI_State_sta[0]);
 
+    sprintf(UI_State_sta[1].show_Data, "Sucker");
+    UICharDraw(&UI_State_sta[1], "ss5", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, 100, 800, "on");
+    UICharRefresh(&referee_info.referee_id, UI_State_sta[1]);
+
+    
+
     UIIntDraw(&UI_Number_t[0],"sm0",UI_Graph_ADD,9,UI_Color_White,20,3,300,700,ui_cmd_recv.auto_confirm_flag);
-    UIIntDraw(&UI_Number_t[1],"sm1",UI_Graph_ADD,9,UI_Color_White,20,3,300,700,ui_cmd_recv.auto_decide_flag);
+    UIIntDraw(&UI_Number_t[1],"sm1",UI_Graph_ADD,9,UI_Color_White,20,3,300,700,ui_cmd_recv.auto_decide_flag);   
+
+
     UIGraphRefresh(&referee_info.referee_id, 5, UI_Deriction_line[0], UI_Deriction_line[1], UI_Deriction_line[2], UI_Deriction_line[3], UI_Circle_t[0]);
     UIGraphRefresh(&referee_info.referee_id, 2, UI_Number_t[0],UI_Number_t[1]);
     UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[0], UI_Circle_t[1], UI_Circle_t[2],UI_Circle_t [3], UI_Circle_t[4]);
@@ -106,6 +114,7 @@ void My_UIGraphRefresh()
     else {
         UIIntDraw(&UI_Number_t[0],"sm0",UI_Graph_Change,9,UI_Color_White,20,3,300,700,ui_cmd_recv.auto_confirm_flag);
         UIIntDraw(&UI_Number_t[1],"sm1",UI_Graph_Change,9,UI_Color_White,20,3,300+100,700,ui_cmd_recv.auto_decide_flag);
+        
 
         switch (ui_cmd_recv.PC_Mode){
             case 0:{
