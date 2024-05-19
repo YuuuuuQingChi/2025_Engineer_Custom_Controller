@@ -92,7 +92,7 @@ typedef union
 typedef enum{
     PC_Walk=1,         //行走模式
     PC_Get_Money=2,      //取矿模式
-    PC_To_AUTO_MODE=0,   //自动模式
+    PC_To_AUTO_MODE=3,   //自动模式
 }PC_Mode_t;
 
 // @todo 当前结构体嵌套过深,需要进行优化

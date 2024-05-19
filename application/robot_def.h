@@ -196,8 +196,12 @@ typedef struct
     PC_Mode_t PC_Mode;
     int32_t auto_decide_flag ; 
     int32_t auto_confirm_flag;
-    int flag_refresh_ui;
-    int16_t air_flag;
+    int16_t flag_refresh_ui;
+    int16_t main_air_flag;
+    int16_t left_air_flag;
+    int16_t right_air_flag;
+    int16_t air_up_gang_flag;
+    int16_t air_down_gang_flag;
 } ui_Cmd_s;
 
 typedef struct

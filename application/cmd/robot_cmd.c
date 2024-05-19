@@ -102,21 +102,6 @@ void RobotCMDInit()
 
     robot_state = ROBOT_READY; // 启动时机器人进入工作模式,后续加入所有应用初始化完成之后再进入
     last_angle = forward_fetch_data.new_left_angle;
-
-    // chassis_cmd_send.chassis_mode=CHASSIS_WALK;
-    // first_stretch_cmd_send.first_stretch_mode=FIRST_STRETCH;
-    // first_stretch_cmd_send.left_now=-STRETCH_1_INIT_ANGLE_LEFT;
-    // first_stretch_cmd_send.right_now=STRETCH_1_INIT_ANGLE_LEFT;
-    // first_stretch_cmd_send.left_last=-STRETCH_1_INIT_ANGLE_RIGHT;
-    // first_stretch_cmd_send.right_last=STRETCH_1_INIT_ANGLE_RIGHT;
-
-    // lift_cmd_send.lift_mode = LIFT;
-    // lift_cmd_send.left_now=LIFT_INIT_ANGLE_LEFT;
-    // lift_cmd_send.right_now=LIFT_INIT_ANGLE_RIGHT;
-    // lift_cmd_send.left_last=LIFT_INIT_ANGLE_LEFT;
-    // lift_cmd_send.right_last=LIFT_INIT_ANGLE_RIGHT;
-    // Init_Value();
-    // last_angle = forward_fetch_data.new_left_angle;
 }
 
 
@@ -168,8 +153,7 @@ float Limit_Set(float obj, float max, float min)
  *  全局限位：自动模式、键鼠、遥控器通用
  */
 void cmd_value_limit(){
-    // lift_cmd_send.left_now=lift_cmd_send.left_last;
-    // lift_cmd_send.right_now=lift_cmd_send.right_last;
+   
     lift_cmd_send.left_now=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);
     lift_cmd_send.right_now=Limit_Set(lift_cmd_send.right_now,LIFT_MAX_ANGLE_RIGHT,LIFT_MIN_ANGLE_RIGHT);
     lift_cmd_send.left_last=Limit_Set(lift_cmd_send.left_now,LIFT_MAX_ANGLE_LEFT,LIFT_MIN_ANGLE_LEFT);
@@ -213,6 +197,7 @@ void Maintain_current_posture(); // 保持当前姿态的函数，不止自动�
 
 static void RemoteControlSet()
 {
+    // 左侧开关状态[上],右侧开关状态[上]
     if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_up(rc_data[TEMP].rc.switch_left)) {
         if (is_range(rc_data[TEMP].rc.rocker_l1) || is_range(rc_data[TEMP].rc.rocker_l_) || is_range(rc_data[TEMP].rc.rocker_r_)) {
             chassis_cmd_send.vx           = rc_data[TEMP].rc.rocker_l_ * 20; 
@@ -224,7 +209,7 @@ static void RemoteControlSet()
             lift_cmd_send.right_now -= rc_data[TEMP].rc.rocker_r1 / 20.0;
         }
     }
-    // 右侧开关状态[中],左侧开关状态[中]
+    // 左侧开关状态[中],右侧开关状态[中]
     if ((switch_is_mid(rc_data[TEMP].rc.switch_right)) && switch_is_mid(rc_data[TEMP].rc.switch_left)) {
         // 一级伸出
         if (1 - is_range(rc_data[TEMP].rc.rocker_l_) && (is_range(rc_data[TEMP].rc.rocker_r1))) {
@@ -243,24 +228,37 @@ static void RemoteControlSet()
         } 
     }
 
-    // 右侧开关状态[上],左侧开关状态[中]
+    // 左侧开关状态[中],右侧开关状态[上]
     if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_mid(rc_data[TEMP].rc.switch_left)) {
         // 横移
         if (is_range(rc_data[TEMP].rc.rocker_r_)) {
             horizontal_cmd_send.Now_MechAngle += rc_data[TEMP].rc.rocker_r_ / 60.0;
         } 
-
-       
         // 前端
          control_forward(rc_data[TEMP].rc.rocker_l_ / 660.0 * 120,rc_data[TEMP].rc.rocker_r1 / 660.0 * 120);
     }
     
-    // 右侧开关状态[下],左侧开关状态[中]
+    // 左侧开关状态[中],右侧开关状态[下]
     if ((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_mid(rc_data[TEMP].rc.switch_left)) {
-        servo_cmd_send.pitch_now_angle += rc_data[TEMP].rc.rocker_r1 / 660.0 * 1;
-        servo_cmd_send.yaw_now_angle += rc_data[TEMP].rc.rocker_l_ / 660.0 * 1;
-    }
+        servo_cmd_send.pitch_now_angle += rc_data[TEMP].rc.rocker_r1 / 660.0 * 10;
+        if(servo_cmd_send.pitch_now_angle > 180)
+        {
+            servo_cmd_send.pitch_now_angle = 180;
+        }
+        else if(servo_cmd_send.pitch_now_angle < 0)
+        {
+            servo_cmd_send.pitch_now_angle = 0;
+        }
+        if(rc_data[TEMP].rc.rocker_l_ > 300)
+        {
+        servo_cmd_send.yaw_now_angle = 75;
+        }
+        else if(rc_data[TEMP].rc.rocker_l_ < -300)
+        {
+        servo_cmd_send.yaw_now_angle = 25;
+        }
 
+    }
     // 双下
     if ((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)) {
         memset(&rc_data[TEMP].key[KEY_PRESS], 0, sizeof(Key_t));
@@ -290,14 +288,6 @@ static void RemoteControlSet()
         horizontal_cmd_send.Horizontal_mode = HORIZONTAL_MOVE;
     }
 
-    // 气泵 除双下模式都可以用
-    if ((rc_data[TEMP].rc.dial > 50) && !((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left))) {
-        ui_cmd_send.air_flag = 1;
-    } else if((rc_data[TEMP].rc.dial < -50) && !((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left))) {
-        ui_cmd_send.air_flag = 2;
-    }
-    if(!((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)))
-    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, ui_cmd_send.air_flag == 1 ?1:0);
 }
 
 
@@ -376,15 +366,6 @@ static void MouseKeySet()
          NVIC_SystemReset();
     }
 
-    if (rc_data[TEMP].key[KEY_PRESS].v)
-        {
-            ui_cmd_send.air_flag = 1;
-        }
-        else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].v)
-        {
-            ui_cmd_send.air_flag = 2;
-        }
-        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, ui_cmd_send.air_flag == 1 ?1:0);
 }
 
 
@@ -449,6 +430,80 @@ void mode_change()
 }
 
 
+
+
+
+/**
+ * @brief 气路控制
+ * @attention PB8引脚是左气泵
+ * @attention PB9引脚是右气泵 
+ * @attention PC10引脚是下气缸阀
+ * @attention PD14引脚是上气缸阀
+ * @attention PD15引脚是左气泵阀
+ * @attention PE0引脚是右气泵阀
+ * @attention PE1引脚是大气泵阀
+ * @attention PE14引脚是大气泵
+ */
+void air_controll()
+{
+    //大气泵
+    if (rc_data[TEMP].key[KEY_PRESS].v || (rc_data[TEMP].rc.dial > 250))
+    {
+        ui_cmd_send.main_air_flag = 1;
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].v || rc_data[TEMP].rc.dial < -250 )
+    {
+        ui_cmd_send.main_air_flag = 2;
+    }
+    //小气泵左 电脑f 遥控器右垂直 ->下吸盘 
+    if(rc_data[TEMP].key[KEY_PRESS].f ||((switch_is_mid(rc_data[TEMP].rc.switch_right)) && switch_is_up(rc_data[TEMP].rc.switch_left) && (rc_data[TEMP].rc.rocker_r1 > 200 || rc_data[TEMP].rc.rocker_r1 < -200)))
+    {
+        ui_cmd_send.left_air_flag = 1;
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].f || ((switch_is_mid(rc_data[TEMP].rc.switch_right)) && switch_is_up(rc_data[TEMP].rc.switch_left) && !is_range(rc_data[TEMP].rc.rocker_r1)))
+    {
+        ui_cmd_send.left_air_flag = 2;
+    }
+    //小气泵右 上气缸 电脑g 遥控器左垂直 ->上吸盘
+    if(rc_data[TEMP].key[KEY_PRESS].f ||((switch_is_mid(rc_data[TEMP].rc.switch_right)) && switch_is_up(rc_data[TEMP].rc.switch_left) && (rc_data[TEMP].rc.rocker_l1 > 200 || rc_data[TEMP].rc.rocker_l1 < -200)))
+    {
+        ui_cmd_send.right_air_flag = 1;
+        ui_cmd_send.air_up_gang_flag = 1;
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].f || ((switch_is_mid(rc_data[TEMP].rc.switch_right)) && switch_is_up(rc_data[TEMP].rc.switch_left) && !is_range(rc_data[TEMP].rc.rocker_l1)))
+    {
+        ui_cmd_send.air_up_gang_flag = 2;
+        ui_cmd_send.right_air_flag = 2;
+    }
+    //下气缸 电脑b 遥控器右水平
+    if(rc_data[TEMP].key[KEY_PRESS].b ||((switch_is_mid(rc_data[TEMP].rc.switch_right)) && switch_is_up(rc_data[TEMP].rc.switch_left) && (rc_data[TEMP].rc.rocker_r_ > 200 || rc_data[TEMP].rc.rocker_r_ < -200)))
+    {
+        ui_cmd_send.air_down_gang_flag = 1;
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].b || ((switch_is_mid(rc_data[TEMP].rc.switch_right)) && switch_is_up(rc_data[TEMP].rc.switch_left) && !is_range(rc_data[TEMP].rc.rocker_r_)))
+    {
+        ui_cmd_send.air_down_gang_flag = 2;
+    }
+ 
+    if(!((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)))
+    {
+        //大气泵
+        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, ui_cmd_send.main_air_flag == 1 ? 1:0);
+        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1,HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_14) == 1 ? 0:1);
+        //小气泵右 上气缸 电脑g 遥控器左垂直 ->上吸盘
+        HAL_GPIO_WritePin(GPIOB,GPIO_PIN_9,ui_cmd_send.right_air_flag == 1 ? 1:0);
+        HAL_GPIO_WritePin(GPIOD,GPIO_PIN_14,ui_cmd_send.air_up_gang_flag == 1 ? 1:0);
+        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_0,HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_14) == 1 ? 0:1);
+        //下气缸 电脑b 遥控器右水平
+        HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,ui_cmd_send.air_down_gang_flag == 1 ? 1:0);
+        //小气泵左 电脑f 遥控器右垂直 ->下吸盘 
+        HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,ui_cmd_send.left_air_flag == 1 ? 1:0);
+        HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15,HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_8) == 1 ? 0:1);
+
+        //
+        
+    }
+}
 
 
 
@@ -694,7 +749,7 @@ float Automatic_mode_target_setting(float target, float measure, float expected_
     SubGetMessage(horizontal_feed_sub, (void *)&horizontal_fetch_data);
     SubGetMessage(servo_feed_sub,(void *)&servo_fetch_data);
     SubGetMessage(ui_feed_sub,(void *)&ui_fetch_data);
-    // 遥控器其余状态为遥控器模式//遥控器左下右上，切换为电脑模式
+    //遥控器左下右上，切换为电脑模式
     if (switch_is_down(rc_data[TEMP].rc.switch_left) && switch_is_up(rc_data[TEMP].rc.switch_right)) {
 
         MouseKeySet();
@@ -702,12 +757,13 @@ float Automatic_mode_target_setting(float target, float measure, float expected_
     } else {
         RemoteControlSet();
     }
-    // 遥控器左下右上   自动模式
-    if(ui_cmd_send.PC_Mode == PC_To_AUTO_MODE)
+    // 遥控器左下右中 || 电脑切换成自动模式
+    if(ui_cmd_send.PC_Mode == PC_To_AUTO_MODE || (switch_is_down(rc_data[TEMP].rc.switch_left) && switch_is_mid(rc_data[TEMP].rc.switch_right)))
     {
     auto_mode();
     }
-    cmd_value_limit();
+    air_controll();
+    //cmd_value_limit();
     PubPushMessage(ui_cmd_pub,(void *)&ui_cmd_send);
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(lift_cmd_pub, (void *)&lift_cmd_send);

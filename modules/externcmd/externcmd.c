@@ -100,7 +100,7 @@ ext_robot_command_pack *ExternCmdRegister(UART_HandleTypeDef *ExternCmdUsartHand
     ExternCmdUsartInstance = USARTRegister(&conf);
 
     Daemon_Init_Config_s daemon_conf = {
-        .reload_count = 10, // 100ms未收到数据视为离线,遥控器的接收频率实际上是1000/14Hz(大约70Hz)
+        .reload_count = 100, // 100ms未收到数据视为离线,遥控器的接收频率实际上是1000/14Hz(大约70Hz)
         .callback     = ExternCmdLostCallback,
         .owner_id     = NULL, // 只有1个遥控器,不需要owner_id
     };
