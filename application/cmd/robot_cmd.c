@@ -315,6 +315,11 @@ static void MouseKeySet()
 {
     PC_Mode_Set(&ui_cmd_send.PC_Mode);
     ui_cmd_send.flag_refresh_ui=ui_fetch_data.flag_refresh_ui;
+
+    //舵机控制
+    servo_cmd_send.pitch_now_angle=rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].w-rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].s;
+    servo_cmd_send.yaw_now_angle=rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].a-rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].d;
+
     if (rc_data[TEMP].key[KEY_PRESS].r)ui_cmd_send.flag_refresh_ui=1;
     if (ui_cmd_send.PC_Mode == PC_Walk) {
         chassis_cmd_send.chassis_mode = CHASSIS_WALK;
