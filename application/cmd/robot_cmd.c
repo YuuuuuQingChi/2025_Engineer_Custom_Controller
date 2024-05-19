@@ -259,7 +259,7 @@ static void RemoteControlSet()
         }
 
     }
-    // 双下
+    // 双下1
     if ((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)) {
         memset(&rc_data[TEMP].key[KEY_PRESS], 0, sizeof(Key_t));
         memset(&rc_data[TEMP].key[KEY_PRESS_WITH_CTRL], 0, sizeof(Key_t));
