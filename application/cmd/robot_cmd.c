@@ -261,11 +261,6 @@ static void RemoteControlSet()
     }
     // 双下
     if ((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)) {
-        memset(&rc_data[TEMP].key[KEY_PRESS], 0, sizeof(Key_t));
-        memset(&rc_data[TEMP].key[KEY_PRESS_WITH_CTRL], 0, sizeof(Key_t));
-        memset(&rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT], 0, sizeof(Key_t));
-        memset(&rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL], 0, sizeof(Key_t));
-
         lift_cmd_send.lift_mode                     = LIFT_STOP;
         second_stretch_cmd_send.second_stretch_mode = SECOND_STOP;
         first_stretch_cmd_send.first_stretch_mode   = FIRST_STOP;
@@ -315,36 +310,43 @@ static void MouseKeySet()
 {
     PC_Mode_Set(&ui_cmd_send.PC_Mode);
     ui_cmd_send.flag_refresh_ui=ui_fetch_data.flag_refresh_ui;
+    servo_cmd_send.pitch_now_angle=rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL].w-rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL].s;
+    servo_cmd_send.yaw_now_angle=rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL].a-rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL].d;
     if (rc_data[TEMP].key[KEY_PRESS].r)ui_cmd_send.flag_refresh_ui=1;
     if (ui_cmd_send.PC_Mode == PC_Walk) {
         chassis_cmd_send.chassis_mode = CHASSIS_WALK;
-        chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12);
-        chassis_cmd_send.vx           = (-rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 + rc_data[TEMP].key[KEY_PRESS].d * 660 * 12);
-        chassis_cmd_send.wz           = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12);
+        if (rc_data[TEMP].key[KEY_PRESS].w || rc_data[TEMP].key[KEY_PRESS].s){
+            ramp_init(&chassis_vy_ramp, RAMP_TIME);
+            chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 12)*ramp_calc(&chassis_vy_ramp); 
+        }
+
+        if (rc_data[TEMP].key[KEY_PRESS].a || rc_data[TEMP].key[KEY_PRESS].d){
+            ramp_init(&chassis_vx_ramp, RAMP_TIME);
+            chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].d * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].a * 660 * 12)*ramp_calc(&chassis_vx_ramp);
+        }
+        if (rc_data[TEMP].key[KEY_PRESS].q || rc_data[TEMP].key[KEY_PRESS].e){
+            ramp_init(&chassis_vw_ramp, RAMP_TIME);
+            chassis_cmd_send.wz           = (rc_data[TEMP].key[KEY_PRESS].e * 660 * 12 - rc_data[TEMP].key[KEY_PRESS].q * 660 * 12)*ramp_calc(&chassis_vw_ramp);
+        }
     }
 
-    else if (ui_cmd_send.PC_Mode == PC_Get_Money) { 
-        // 这里左右电机默认镜像，若反转应改正负
-        // 行走模式
-
-            chassis_cmd_send.chassis_mode = CHASSIS_WALK;
-
-        if (rc_data[TEMP].key[KEY_PRESS].w){
-            chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].w * 660 * 12)*ramp_calc(&chassis_vx_ramp); 
-        }
-        else {
-            ramp_init(&chassis_vx_ramp, RAMP_TIME);
-            chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 12 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].w * 660 * 12)*ramp_calc(&chassis_vx_ramp);
-        }
-
-        if (rc_data[TEMP].key[KEY_PRESS].a){
-        chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 660 * 12)*ramp_calc(&chassis_vy_ramp);
-        }
-        else {
+    else { 
+       
+        if (rc_data[TEMP].key[KEY_PRESS].w || rc_data[TEMP].key[KEY_PRESS].s){
             ramp_init(&chassis_vy_ramp, RAMP_TIME);
-            chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].a * 660 * 12 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 660 * 12)*ramp_calc(&chassis_vy_ramp);
+            chassis_cmd_send.vy           = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 4 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 4)*ramp_calc(&chassis_vy_ramp); 
         }
 
+        if (rc_data[TEMP].key[KEY_PRESS].a || rc_data[TEMP].key[KEY_PRESS].d){
+            ramp_init(&chassis_vx_ramp, RAMP_TIME);
+            chassis_cmd_send.vx           = (rc_data[TEMP].key[KEY_PRESS].d * 660 * 4 - rc_data[TEMP].key[KEY_PRESS].a * 660 * 4)*ramp_calc(&chassis_vx_ramp);
+        }
+        if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].q || rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].e){
+            ramp_init(&chassis_vw_ramp, RAMP_TIME);
+            chassis_cmd_send.wz           = (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].e * 660 * 4 - rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].q * 660 * 4)*ramp_calc(&chassis_vw_ramp);
+        }
+    }
+          
         first_stretch_cmd_send.left_now += -rc_data[TEMP].key[KEY_PRESS].z * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].z *50  - rc_data[TEMP].key[KEY_PRESS].s * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 50;
         first_stretch_cmd_send.right_now += -rc_data[TEMP].key[KEY_PRESS].z * 50 + rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].z * 50 + rc_data[TEMP].key[KEY_PRESS].s * 50 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 50;
 
@@ -354,13 +356,11 @@ static void MouseKeySet()
         lift_cmd_send.left_now += (rc_data[TEMP].key[KEY_PRESS].c * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].c * 28);
         lift_cmd_send.right_now -= (rc_data[TEMP].key[KEY_PRESS].c * 28 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].c * 28);
 
-        horizontal_cmd_send.Now_MechAngle += rc_data[TEMP].key[KEY_PRESS].d * 11 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 11;
+        horizontal_cmd_send.Now_MechAngle += (rc_data[TEMP].key[KEY_PRESS].d * 11 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 11);
 
-        
- 
         control_forward((rc_data[TEMP].key[KEY_PRESS].q * 40 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q * 40), (rc_data[TEMP].key[KEY_PRESS].e * 80 - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e * 80));
-    }
-    else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].r) {
+    
+    if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].r) {
         // 重新上电达妙板子
          __set_FAULTMASK(1);
          NVIC_SystemReset();
@@ -437,12 +437,11 @@ void mode_change()
  * @brief 气路控制
  * @attention PB8引脚是左气泵
  * @attention PB9引脚是右气泵 
- * @attention PC10引脚是下气缸阀
+ * @attention PC10引脚是大气泵
  * @attention PD14引脚是上气缸阀
  * @attention PD15引脚是左气泵阀
  * @attention PE0引脚是右气泵阀
  * @attention PE1引脚是大气泵阀
- * @attention PE14引脚是大气泵
  */
 void air_controll()
 {
@@ -488,14 +487,14 @@ void air_controll()
     if(!((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)))
     {
         //大气泵
-        HAL_GPIO_WritePin(GPIOE, GPIO_PIN_14, ui_cmd_send.main_air_flag == 1 ? 1:0);
+        HAL_GPIO_WritePin(GPIOC, GPIO_PIN_10, ui_cmd_send.main_air_flag == 1 ? 1:0);
         HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1,HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_14) == 1 ? 0:1);
         //小气泵右 上气缸 电脑g 遥控器左垂直 ->上吸盘
         HAL_GPIO_WritePin(GPIOB,GPIO_PIN_9,ui_cmd_send.right_air_flag == 1 ? 1:0);
         HAL_GPIO_WritePin(GPIOD,GPIO_PIN_14,ui_cmd_send.air_up_gang_flag == 1 ? 1:0);
         HAL_GPIO_WritePin(GPIOE, GPIO_PIN_0,HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_14) == 1 ? 0:1);
         //下气缸 电脑b 遥控器右水平
-        HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,ui_cmd_send.air_down_gang_flag == 1 ? 1:0);
+        //HAL_GPIO_WritePin(GPIOC,GPIO_PIN_10,ui_cmd_send.air_down_gang_flag == 1 ? 1:0);
         //小气泵左 电脑f 遥控器右垂直 ->下吸盘 
         HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8,ui_cmd_send.left_air_flag == 1 ? 1:0);
         HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15,HAL_GPIO_ReadPin(GPIOD,GPIO_PIN_8) == 1 ? 0:1);
@@ -511,9 +510,9 @@ void air_controll()
  * @brief 自动模式控制
  *
  */
-
+int16_t point;
 int16_t flag_r1, flag_r2, flag_r3, flag_r4;    // 数据小心会溢出
-int16_t flag1 = 1,flag2,flag3 = 1,flag4,flag5 = 1;                                            
+int16_t flag1 = 1,flag2,flag3 = 1,flag4,flag5 = 1,flag6;                                            
 void auto_mode_decide();                                                                     // 自动模式选择函数
 void Put_it_back_in_the_silo();                                                              // 放回矿仓
 void auto_small_resource_island();                                                           // 取小资源岛
@@ -574,9 +573,9 @@ void auto_small_resource_island() // 取小资源岛
     {
     if(flag3 == 1)
     {
-        lift_cmd_send.left_now              = Automatic_mode_target_setting(15229, lift_fetch_data.new_left_angle, 100);
-        lift_cmd_send.right_now             = Automatic_mode_target_setting(-14907, lift_fetch_data.new_right_angle, 100);
-        if(lift_fetch_data.new_left_angle > 15000 && lift_fetch_data.new_left_angle < 15500)
+        lift_cmd_send.left_now              = Automatic_mode_target_setting(16229, lift_fetch_data.new_left_angle, 100);
+        lift_cmd_send.right_now             = Automatic_mode_target_setting(-15907, lift_fetch_data.new_right_angle, 100);
+        if((lift_fetch_data.new_left_angle > 16000 && lift_fetch_data.new_left_angle < 16500) && (lift_fetch_data.new_right_angle < -15700 && lift_fetch_data.new_right_angle > -16300))
         {
         flag1 = 1;
         }
@@ -585,7 +584,7 @@ void auto_small_resource_island() // 取小资源岛
         flag1 = 0;
         }
     }
-    if(flag1 == 1 || (lift_fetch_data.new_left_angle > 15000 && lift_fetch_data.new_left_angle < 15500))
+    if(flag1 == 1 || ((lift_fetch_data.new_left_angle > 16000 && lift_fetch_data.new_left_angle < 16500) && (lift_fetch_data.new_right_angle < -15700 && lift_fetch_data.new_right_angle > -16300)))
     {
     first_stretch_cmd_send.left_now     = Automatic_mode_target_setting(15416, first_stretch_fetch_data.new_left_encoder, 150);
     first_stretch_cmd_send.right_now    = Automatic_mode_target_setting(-15577, first_stretch_fetch_data.new_right_encoder, 150);
@@ -639,10 +638,10 @@ void auto_small_resource_island() // 取小资源岛
             horizontal_cmd_send.Now_MechAngle = horizontal_fetch_data.Horizontal_Movement;
             break;
     }
-    if (first_stretch_fetch_data.new_left_encoder > 15000 &&first_stretch_fetch_data.new_left_encoder < 15500 && second_stretch_fetch_data.new_left_angle <200 && second_stretch_fetch_data.new_left_angle > -200 && flag2 == 1)
+    if (first_stretch_fetch_data.new_left_encoder > 15000 &&first_stretch_fetch_data.new_left_encoder < 15500 && second_stretch_fetch_data.new_left_angle <120 && second_stretch_fetch_data.new_left_angle > -200 && flag2 == 1)
     {
-        lift_cmd_send.left_now              = Automatic_mode_target_setting(12729, lift_fetch_data.new_left_angle, 100);
-        lift_cmd_send.right_now             = Automatic_mode_target_setting(-13407, lift_fetch_data.new_right_angle, 100);
+        lift_cmd_send.left_now              = Automatic_mode_target_setting(14172, lift_fetch_data.new_left_angle, 100);
+        lift_cmd_send.right_now             = Automatic_mode_target_setting(-14167, lift_fetch_data.new_right_angle, 100);
         flag3 = 0;
     }
     else{
@@ -661,9 +660,9 @@ void Put_it_back_in_the_silo()
     {
     if(flag5 == 1)
     {
-        lift_cmd_send.left_now              = Automatic_mode_target_setting(15229, lift_fetch_data.new_left_angle, 100);
-        lift_cmd_send.right_now             = Automatic_mode_target_setting(-14907, lift_fetch_data.new_right_angle, 100);
-        if(lift_fetch_data.new_left_angle > 15000 && lift_fetch_data.new_left_angle < 15500)
+        lift_cmd_send.left_now              = Automatic_mode_target_setting(18729, lift_fetch_data.new_left_angle, 100);
+        lift_cmd_send.right_now             = Automatic_mode_target_setting(-18407, lift_fetch_data.new_right_angle, 100);
+        if((lift_fetch_data.new_left_angle > 18520 && lift_fetch_data.new_left_angle < 18940 )&&(lift_fetch_data.new_right_angle > -18620 && lift_fetch_data.new_right_angle < -18240))
         {
         flag4 = 1;
         }
@@ -672,19 +671,19 @@ void Put_it_back_in_the_silo()
         flag4 = 0;
         }
     }    
-    if(flag4 == 1|| (lift_fetch_data.new_left_angle > 15000 && lift_fetch_data.new_left_angle < 15500))
+    if(flag4 == 1|| ((lift_fetch_data.new_left_angle > 18520 && lift_fetch_data.new_left_angle < 18940 )&&(lift_fetch_data.new_right_angle > -18620 && lift_fetch_data.new_right_angle < -18240)))
     {
     horizontal_cmd_send.Now_MechAngle = Automatic_mode_target_setting(27, horizontal_fetch_data.Horizontal_Movement, 60);
-    if (horizontal_fetch_data.Horizontal_Movement < 1000 && horizontal_fetch_data.Horizontal_Movement > -1000) // 横移回到了二级的里面
+    if (horizontal_fetch_data.Horizontal_Movement < 200 && horizontal_fetch_data.Horizontal_Movement > -200) // 横移回到了二级的里面
     {
-        second_stretch_cmd_send.left_now  = Automatic_mode_target_setting(-13678, second_stretch_fetch_data.new_left_angle, 50);
-        second_stretch_cmd_send.right_now = Automatic_mode_target_setting(14096, second_stretch_fetch_data.new_right_angle, 50);
-        first_stretch_cmd_send.left_now   = Automatic_mode_target_setting(23162, first_stretch_fetch_data.new_left_encoder, 150);
-        first_stretch_cmd_send.right_now  = Automatic_mode_target_setting(-23849, first_stretch_fetch_data.new_right_encoder, 150);
-        if(first_stretch_fetch_data.new_left_encoder > 21000 && second_stretch_fetch_data.new_left_angle < -13000)
+        second_stretch_cmd_send.left_now  = Automatic_mode_target_setting(-14404, second_stretch_fetch_data.new_left_angle, 50);
+        second_stretch_cmd_send.right_now = Automatic_mode_target_setting(14370, second_stretch_fetch_data.new_right_angle, 50);
+        first_stretch_cmd_send.left_now   = Automatic_mode_target_setting(25703, first_stretch_fetch_data.new_left_encoder, 150);
+        first_stretch_cmd_send.right_now  = Automatic_mode_target_setting(-23090, first_stretch_fetch_data.new_right_encoder, 150);
+        if(first_stretch_fetch_data.new_left_encoder > 25000 && first_stretch_fetch_data.new_left_encoder < 27000 && first_stretch_fetch_data.new_right_encoder > -23700 && first_stretch_fetch_data.new_right_encoder < -22300 && second_stretch_fetch_data.new_right_angle > 13700 && second_stretch_fetch_data.new_right_angle < 14500 &&second_stretch_fetch_data.new_left_angle < -13500 && second_stretch_fetch_data.new_left_angle > -15000)
         {
-            lift_cmd_send.left_now            = Automatic_mode_target_setting(7895, lift_fetch_data.new_left_angle, 100);
-            lift_cmd_send.right_now           = Automatic_mode_target_setting(-8019, lift_fetch_data.new_right_angle, 100);
+            lift_cmd_send.left_now            = Automatic_mode_target_setting(9541, lift_fetch_data.new_left_angle, 100);
+            lift_cmd_send.right_now           = Automatic_mode_target_setting(-9547, lift_fetch_data.new_right_angle, 100);
             flag5 = 0;
         }
         else
@@ -704,11 +703,42 @@ void Put_it_back_in_the_silo()
     }
     }
 }
+//取出矿仓
+void Extracting_ore()
+{
+    lift_cmd_send.left_now              = Automatic_mode_target_setting(18729, lift_fetch_data.new_left_angle, 100);
+    lift_cmd_send.right_now             = Automatic_mode_target_setting(-18407, lift_fetch_data.new_right_angle, 100);
+    if(lift_fetch_data.new_left_angle > 18000 && lift_fetch_data.new_left_angle < 19300 && lift_fetch_data.new_right_angle > -19000 && lift_fetch_data.new_left_angle < -17900)
+    {
+        flag6 = 1;
+    }
+    else
+    {
+        flag6 = 2;
+    }
+    if(flag6 == 1 || (lift_fetch_data.new_left_angle > 18000 && lift_fetch_data.new_left_angle < 19300 && lift_fetch_data.new_right_angle > -19000 && lift_fetch_data.new_left_angle < -17900))
+    {
+        first_stretch_cmd_send.right_now  = Automatic_mode_target_setting(4423, first_stretch_fetch_data.new_right_encoder, 150);
+        first_stretch_cmd_send.left_now   = Automatic_mode_target_setting(-4584, first_stretch_fetch_data.new_left_encoder, 150);
+        second_stretch_cmd_send.right_now   = Automatic_mode_target_setting(1, second_stretch_fetch_data.new_right_angle, 50);
+        second_stretch_cmd_send.left_now    = Automatic_mode_target_setting(-111, second_stretch_fetch_data.new_left_angle, 50);
+        horizontal_cmd_send.Now_MechAngle = Automatic_mode_target_setting(27, horizontal_fetch_data.Horizontal_Movement, 60);
+    }
+    else
+    {
+        first_stretch_cmd_send.left_now   = first_stretch_fetch_data.new_left_encoder;
+        first_stretch_cmd_send.right_now   = first_stretch_fetch_data.new_right_encoder;
+        second_stretch_cmd_send.left_now  = second_stretch_fetch_data.new_left_angle;
+        second_stretch_cmd_send.right_now = second_stretch_fetch_data.new_right_angle;
+        horizontal_cmd_send.Now_MechAngle = horizontal_fetch_data.Horizontal_Movement;
+    }
+
+}
 // 保持当前姿态的函数，不止自动模式可以用，其他地方也可以
 void Maintain_current_posture()
 {
     first_stretch_cmd_send.left_now   = first_stretch_fetch_data.new_left_encoder;
-    first_stretch_cmd_send.left_now   = first_stretch_fetch_data.new_left_encoder;
+    first_stretch_cmd_send.right_now   = first_stretch_fetch_data.new_right_encoder;
     second_stretch_cmd_send.left_now  = second_stretch_fetch_data.new_left_angle;
     second_stretch_cmd_send.right_now = second_stretch_fetch_data.new_right_angle;
     lift_cmd_send.left_now            = lift_fetch_data.new_left_angle;
@@ -732,7 +762,7 @@ float Automatic_mode_target_setting(float target, float measure, float expected_
 
 
 
-
+int8_t aer;
 
 /**
  * @brief CMD核心任务
@@ -749,6 +779,7 @@ float Automatic_mode_target_setting(float target, float measure, float expected_
     SubGetMessage(horizontal_feed_sub, (void *)&horizontal_fetch_data);
     SubGetMessage(servo_feed_sub,(void *)&servo_fetch_data);
     SubGetMessage(ui_feed_sub,(void *)&ui_fetch_data);
+    aer = HAL_GPIO_ReadPin(GPIOE,GPIO_PIN_14);  
     //遥控器左下右上，切换为电脑模式
     if (switch_is_down(rc_data[TEMP].rc.switch_left) && switch_is_up(rc_data[TEMP].rc.switch_right)) {
 
