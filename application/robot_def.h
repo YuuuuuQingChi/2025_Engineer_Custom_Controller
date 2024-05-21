@@ -263,8 +263,7 @@ typedef struct
 
 typedef struct
 { 
-    DJIMotorInstance *first_stretch_left_speed_data,*first_stretch_right_speed_data;
-    EncoderInstance_s *first_stretch_left_angle_data,*first_stretch_right_angle_data;
+
     float new_left_encoder;
     float new_right_encoder;
 
