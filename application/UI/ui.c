@@ -37,13 +37,14 @@ void uiInit()
     UI_Circle_t[2].start_x=680;
     UI_Circle_t[3].start_x=760;
     UI_Circle_t[4].start_x=840;
+    UI_Circle_t[5].start_x=200;
 
     UI_Circle_t[0].start_y=650;
     UI_Circle_t[1].start_y=130;
     UI_Circle_t[2].start_y=130;
     UI_Circle_t[3].start_y=130;
     UI_Circle_t[4].start_y=130;
-    
+    UI_Circle_t[5].start_y=700;
 
     ui_sub = SubRegister("ui_cmd", sizeof(ui_Cmd_s));
     ui_pub = PubRegister("ui_feed", sizeof(ui_Upload_Data_s));
@@ -73,84 +74,120 @@ void My_UIGraphRefresh()
     DeterminRobotID();
 
 
-    if (ui_cmd_recv.flag_refresh_ui){
+    if (ui_cmd_recv.flag_refresh_ui){ //静态部分，不自动刷新
         ui_feedback_data.flag_refresh_ui=0;
+
+    //刷新时先删UI
     UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 9);
     UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 8);
     UIDelete(&referee_info.referee_id, UI_Data_Del_ALL, 7);
 	
     //UICircleDraw(&UI_Circle_t[0], "sc0", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[0].start_x,UI_Circle_t[0].start_y, 8);
-    UICircleDraw(&UI_Circle_t[1], "sc1", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[1].start_x,UI_Circle_t[1].start_y, 15);
-    UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[2].start_x,UI_Circle_t[2].start_y, 15);
-    UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[3].start_x,UI_Circle_t[3].start_y, 15);
-    UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[4].start_x,UI_Circle_t[4].start_y, 15);
+    //模式指示灯 
+    // UICircleDraw(&UI_Circle_t[1], "sc1", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[1].start_x,UI_Circle_t[1].start_y, 15);
+    // UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[2].start_x,UI_Circle_t[2].start_y, 15);
+    // UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[3].start_x,UI_Circle_t[3].start_y, 15);
+    // UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[4].start_x,UI_Circle_t[4].start_y, 15);
     //  UICircleDraw(&UI_Circle_t[5], "sc4", UI_Graph_ADD, 9, UI_Color_White, 10, 550 , 130, 8);
     UILineDraw(&UI_Deriction_line[0],"sl0",UI_Graph_ADD,9,UI_Color_Green,2,600,130,700,400);
     UILineDraw(&UI_Deriction_line[1],"sl1",UI_Graph_ADD,9,UI_Color_Green,2,1920-600,130,1220,400);
-
     UIRectangleDraw(&UI_Rectangle[0],"sj0",UI_Graph_ADD,9,UI_Color_Green,3,700,400,1220,700);
+    
+    //2气缸 3气泵 指示灯
+    UICircleDraw(&UI_Circle_t[5], "sc5", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[5].start_x,UI_Circle_t[5].start_y, 15);
+    UICircleDraw(&UI_Circle_t[6], "sc6", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[5].start_x,UI_Circle_t[5].start_y-50, 15);
+    UICircleDraw(&UI_Circle_t[7], "sc7", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[5].start_x,UI_Circle_t[5].start_y-100, 15);
+    UICircleDraw(&UI_Circle_t[8], "sc8", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[5].start_x,UI_Circle_t[5].start_y-150, 15);
+    UICircleDraw(&UI_Circle_t[9], "sc9", UI_Graph_ADD, 9, UI_Color_White, 10, UI_Circle_t[5].start_x,UI_Circle_t[5].start_y-200, 15);
 
-    sprintf(UI_State_sta[0].show_Data, "Sucker");
-    UICharDraw(&UI_State_sta[0], "ss4", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, 100, 700, "Sucker");
+    sprintf(UI_State_sta[0].show_Data, "MAIN AIR");
+    UICharDraw(&UI_State_sta[0], "ss0", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, UI_Circle_t[5].start_x-50, UI_Circle_t[5].start_y, "MAIN AIR");
     UICharRefresh(&referee_info.referee_id, UI_State_sta[0]);
 
-    sprintf(UI_State_sta[1].show_Data, "Sucker");
-    UICharDraw(&UI_State_sta[1], "ss5", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, 100, 800, "on");
+    sprintf(UI_State_sta[1].show_Data, "LEFT AIR");
+    UICharDraw(&UI_State_sta[1], "ss1", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, UI_Circle_t[5].start_x-50,UI_Circle_t[5].start_y-50, "LEFT AIR");
     UICharRefresh(&referee_info.referee_id, UI_State_sta[1]);
 
+    sprintf(UI_State_sta[2].show_Data, "RIGHT AIR");
+    UICharDraw(&UI_State_sta[2], "ss2", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, UI_Circle_t[5].start_x-50,UI_Circle_t[5].start_y-100, "RIGHT AIR");
+    UICharRefresh(&referee_info.referee_id, UI_State_sta[2]);
+
+    sprintf(UI_State_sta[3].show_Data, "UP GANG");
+    UICharDraw(&UI_State_sta[3], "ss3", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, UI_Circle_t[5].start_x-50,UI_Circle_t[5].start_y-150, "UP GANG");
+    UICharRefresh(&referee_info.referee_id, UI_State_sta[3]);
+
+    sprintf(UI_State_sta[4].show_Data, "DOWN GANG");
+    UICharDraw(&UI_State_sta[4], "ss4", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, UI_Circle_t[5].start_x-50,UI_Circle_t[5].start_y-100, "DOWN GANG");
+    UICharRefresh(&referee_info.referee_id, UI_State_sta[4]);
     
+    //模式切换
+    sprintf(UI_State_sta[5].show_Data, "WALK");
+    UICharDraw(&UI_State_sta[5], "ss5", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, UI_Circle_t[1].start_x,UI_Circle_t[1].start_y, "WALK");
+    UICharRefresh(&referee_info.referee_id, UI_State_sta[5]);
 
-    UIIntDraw(&UI_Number_t[0],"sm0",UI_Graph_ADD,9,UI_Color_White,20,3,300,700,ui_cmd_recv.auto_confirm_flag);
-    UIIntDraw(&UI_Number_t[1],"sm1",UI_Graph_ADD,9,UI_Color_White,20,3,300,700,ui_cmd_recv.auto_decide_flag);   
+    sprintf(UI_State_sta[6].show_Data, "MONEY");
+    UICharDraw(&UI_State_sta[6], "ss6", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, UI_Circle_t[2].start_x,UI_Circle_t[2].start_y, "MONEY");
+    UICharRefresh(&referee_info.referee_id, UI_State_sta[6]);
 
+    sprintf(UI_State_sta[7].show_Data, "AUTO");
+    UICharDraw(&UI_State_sta[7], "ss7", UI_Graph_ADD, 9, UI_Color_Yellow, 12, 2, UI_Circle_t[3].start_x,UI_Circle_t[3].start_y, "AUTO");
+    UICharRefresh(&referee_info.referee_id, UI_State_sta[7]);
+    
+    UIRectangleDraw(&UI_Rectangle[1],"sj1",UI_Graph_ADD,9,UI_Color_Purplish_red,4,UI_Circle_t[ui_cmd_recv.PC_Mode].start_x,UI_Circle_t[ui_cmd_recv.PC_Mode].start_y,UI_Circle_t[ui_cmd_recv.PC_Mode].start_x+100,UI_Circle_t[ui_cmd_recv.PC_Mode].start_y+50);
+    //UIIntDraw(&UI_Number_t[0],"sm0",UI_Graph_ADD,9,UI_Color_White,20,3,300,700,ui_cmd_recv.auto_confirm_flag);
+    //UIIntDraw(&UI_Number_t[1],"sm1",UI_Graph_ADD,9,UI_Color_White,20,3,300,700,ui_cmd_recv.auto_decide_flag);   
 
+    //刷新ui
     UIGraphRefresh(&referee_info.referee_id, 5, UI_Deriction_line[0], UI_Deriction_line[1], UI_Deriction_line[2], UI_Deriction_line[3], UI_Circle_t[0]);
     UIGraphRefresh(&referee_info.referee_id, 2, UI_Number_t[0],UI_Number_t[1]);
     UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[0], UI_Circle_t[1], UI_Circle_t[2],UI_Circle_t [3], UI_Circle_t[4]);
     UIGraphRefresh(&referee_info.referee_id, 1,UI_Rectangle[0]);
-
-
+    UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[5], UI_Circle_t[6], UI_Circle_t[7],UI_Circle_t [8], UI_Circle_t[9]);
+    UIGraphRefresh(&referee_info.referee_id, 1, UI_Rectangle[1]);
     }
     else {
-        UIIntDraw(&UI_Number_t[0],"sm0",UI_Graph_Change,9,UI_Color_White,20,3,300,700,ui_cmd_recv.auto_confirm_flag);
-        UIIntDraw(&UI_Number_t[1],"sm1",UI_Graph_Change,9,UI_Color_White,20,3,300+100,700,ui_cmd_recv.auto_decide_flag);
+        //UIIntDraw(&UI_Number_t[0],"sm0",UI_Graph_Change,9,UI_Color_White,20,3,300,700,ui_cmd_recv.auto_confirm_flag);
+        //UIIntDraw(&UI_Number_t[1],"sm1",UI_Graph_Change,9,UI_Color_White,20,3,300+100,700,ui_cmd_recv.auto_decide_flag);
         
 
-        switch (ui_cmd_recv.PC_Mode){
-            case 0:{
-                UICircleDraw(&UI_Circle_t[1], "sc1", UI_Graph_Change, 9, UI_Color_Pink, 10, UI_Circle_t[1].start_x, UI_Circle_t[1].start_y, 15);
-                UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[2].start_x, UI_Circle_t[2].start_y, 15);
-                UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[3].start_x, UI_Circle_t[3].start_y, 15);
-                UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[4].start_x , UI_Circle_t[4].start_y, 15);
-                break;
-            }
-            case 1:{
-                UICircleDraw(&UI_Circle_t[1], "sc1", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[1].start_x, UI_Circle_t[1].start_y, 15);
-                UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_Change, 9, UI_Color_Pink, 10, UI_Circle_t[2].start_x, UI_Circle_t[2].start_y, 15);
-                UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[3].start_x, UI_Circle_t[3].start_y, 15);
-                UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[4].start_x , UI_Circle_t[4].start_y, 15);
-                break;
-            }
-            case 2:{
-                UICircleDraw(&UI_Circle_t[1], "sc1", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[1].start_x, UI_Circle_t[1].start_y, 15);
-                UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[2].start_x, UI_Circle_t[2].start_y, 15);
-                UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_Change, 9, UI_Color_Pink, 10, UI_Circle_t[3].start_x, UI_Circle_t[3].start_y, 15);
-                UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[4].start_x, UI_Circle_t[4].start_y, 15);
-                break;
-            }
-            case 3:{
-                UICircleDraw(&UI_Circle_t[1], "sc1", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[1].start_x, UI_Circle_t[1].start_y, 15);
-                UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[2].start_x, UI_Circle_t[2].start_y, 15);
-                UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[3].start_x, UI_Circle_t[3].start_y, 15);
-                UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_Change, 9, UI_Color_Pink, 10, UI_Circle_t[4].start_x , UI_Circle_t[4].start_y, 15);
-                break;
-            }
-            default :break;
-        }
+        // switch (ui_cmd_recv.PC_Mode){
+        //     case 1:{
+        //         UICircleDraw(&UI_Circle_t[1], "sc1", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[1].start_x, UI_Circle_t[1].start_y, 15);
+        //         UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_Change, 9, UI_Color_Pink, 10, UI_Circle_t[2].start_x, UI_Circle_t[2].start_y, 15);
+        //         UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[3].start_x, UI_Circle_t[3].start_y, 15);
+        //         UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[4].start_x , UI_Circle_t[4].start_y, 15);
+        //         break;
+        //     }
+        //     case 2:{
+        //         UICircleDraw(&UI_Circle_t[1], "sc1", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[1].start_x, UI_Circle_t[1].start_y, 15);
+        //         UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[2].start_x, UI_Circle_t[2].start_y, 15);
+        //         UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_Change, 9, UI_Color_Pink, 10, UI_Circle_t[3].start_x, UI_Circle_t[3].start_y, 15);
+        //         UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[4].start_x, UI_Circle_t[4].start_y, 15);
+        //         break;
+        //     }
+        //     case 3:{
+        //         UICircleDraw(&UI_Circle_t[1], "sc1", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[1].start_x, UI_Circle_t[1].start_y, 15);
+        //         UICircleDraw(&UI_Circle_t[2], "sc2", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[2].start_x, UI_Circle_t[2].start_y, 15);
+        //         UICircleDraw(&UI_Circle_t[3], "sc3", UI_Graph_Change, 9, UI_Color_White, 10, UI_Circle_t[3].start_x, UI_Circle_t[3].start_y, 15);
+        //         UICircleDraw(&UI_Circle_t[4], "sc4", UI_Graph_Change, 9, UI_Color_Pink, 10, UI_Circle_t[4].start_x , UI_Circle_t[4].start_y, 15);
+        //         break;
+        //     }
+        //     default :break;
+        // }
+
+        UICircleDraw(&UI_Circle_t[5], "sc5", UI_Graph_Change, 9, ui_cmd_recv.main_air_flag==1?5:8, 10, UI_Circle_t[5].start_x,UI_Circle_t[5].start_y, 15);
+        UICircleDraw(&UI_Circle_t[6], "sc6", UI_Graph_Change, 9, ui_cmd_recv.left_air_flag==1?5:8, 10, UI_Circle_t[5].start_x,UI_Circle_t[5].start_y-50, 15);
+        UICircleDraw(&UI_Circle_t[7], "sc7", UI_Graph_Change, 9, ui_cmd_recv.right_air_flag==1?5:8, 10, UI_Circle_t[5].start_x,UI_Circle_t[5].start_y-100, 15);
+        UICircleDraw(&UI_Circle_t[8], "sc8", UI_Graph_Change, 9, ui_cmd_recv.air_up_gang_flag==1?5:8, 10, UI_Circle_t[5].start_x,UI_Circle_t[5].start_y-150, 15);
+        UICircleDraw(&UI_Circle_t[9], "sc9", UI_Graph_Change, 9, ui_cmd_recv.air_down_gang_flag==1?5:8, 10, UI_Circle_t[5].start_x,UI_Circle_t[5].start_y-200, 15);
+
+        UIRectangleDraw(&UI_Rectangle[1],"sj1",UI_Graph_Change,9,UI_Color_Purplish_red,4,UI_Circle_t[ui_cmd_recv.PC_Mode].start_x,UI_Circle_t[ui_cmd_recv.PC_Mode].start_y,UI_Circle_t[ui_cmd_recv.PC_Mode].start_x+100,UI_Circle_t[ui_cmd_recv.PC_Mode].start_y+50);
         
 
         UIGraphRefresh(&referee_info.referee_id, 2, UI_Number_t[0],UI_Number_t[1]);
         UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[0], UI_Circle_t[1], UI_Circle_t[2],UI_Circle_t [3], UI_Circle_t[4]);
+        UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[5], UI_Circle_t[6], UI_Circle_t[7],UI_Circle_t [8], UI_Circle_t[9]);
+        UIGraphRefresh(&referee_info.referee_id, 1, UI_Rectangle[1]);
     }
 }
 void BuzzerTask(void *argument)

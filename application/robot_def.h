@@ -197,11 +197,11 @@ typedef struct
     int32_t auto_decide_flag ; 
     int32_t auto_confirm_flag;
     int16_t flag_refresh_ui;
-    int16_t main_air_flag;
-    int16_t left_air_flag;
-    int16_t right_air_flag;
-    int16_t air_up_gang_flag;
-    int16_t air_down_gang_flag;
+    int16_t main_air_flag;//主气泵
+    int16_t left_air_flag;//左气泵
+    int16_t right_air_flag;//右气泵
+    int16_t air_up_gang_flag;//上气缸
+    int16_t air_down_gang_flag;//下气缸
 } ui_Cmd_s;
 
 typedef struct
