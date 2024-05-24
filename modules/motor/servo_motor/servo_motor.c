@@ -34,21 +34,26 @@ void Servo_Motor_FreeAngle_Set(ServoInstance *Servo_Motor, int16_t S_angle)
     case Servo180:
         if (S_angle > 180)
             S_angle = 180;
+        if (S_angle<0){
+            S_angle=0;
+        }
         break;
     case Servo270:
         if (S_angle > 270)
             S_angle = 270;
         break;
     case Servo360:
-        if (S_angle > 100)
-            S_angle = 100;
+        if (S_angle > 21)
+            S_angle = 21;
+        if (S_angle<-179){
+            S_angle=-179;
+        }
         break;
     default:
         break;
     }
-    if (S_angle < 0)
-        S_angle = 0;
     Servo_Motor->Servo_Angle.free_angle = S_angle;
+    Servo_Motor->Servo_Angle.servo360speed=S_angle;
 }
 
 /**
@@ -110,7 +115,7 @@ void ServeoMotorControl()
                 break;
             case Servo360:
                 /*500-2500的占空比 500-1500对应正向转速 1500-2500对于反向转速*/
-                compare_value[i] = 500 + 20 * Servo_Motor->Servo_Angle.servo360speed;
+                compare_value[i] =2290+ 10 * Servo_Motor->Servo_Angle.servo360speed;
                 __HAL_TIM_SET_COMPARE(Servo_Motor->htim, Servo_Motor->Channel, compare_value[i]);
                 break;
             default:

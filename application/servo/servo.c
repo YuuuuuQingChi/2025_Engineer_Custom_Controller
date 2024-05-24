@@ -21,8 +21,8 @@ void Servo_Init(){
     .Servo_type=Servo360,
     .Servo_Angle_Type=Free_Angle_mode,
     // 使用的定时器类型及通道
-    .htim = &htim2,
-    .Channel= TIM_CHANNEL_3,
+    .htim = &htim1,
+    .Channel= TIM_CHANNEL_1,
     };
 
     Pitch_Motor = ServoInit(&Pitch_config);

@@ -298,7 +298,6 @@ void DJIMotorControl()
     // 遍历flag,检查是否要发送这一帧报文
     for (size_t i = 0; i < 9; ++i) {
         if (sender_enable_flag[i]) {
-            // TODO:测试调试
             CANTransmit(&sender_assignment[i], 1);
         }
     }

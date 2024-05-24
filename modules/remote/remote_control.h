@@ -30,6 +30,7 @@
 #define KEY_PRESS_WITH_CTRL 1
 #define KEY_PRESS_WITH_SHIFT 2
 #define KEY_PRESS_WITH_SHIFT_AND_CTRL 3
+#define KEY_PRESS_MOUSE_LEFT 4
 // 检查接收值是否出错
 #define RC_CH_VALUE_MIN ((uint16_t)364)
 #define RC_CH_VALUE_OFFSET ((uint16_t)1024)
@@ -90,9 +91,9 @@ typedef union
 } Key_t;
 
 typedef enum{
-    PC_Walk=1,         //行走模式
-    PC_Get_Money=2,      //取矿模式
-    PC_To_AUTO_MODE=3,   //自动模式
+    PC_Get_Money=1,      //取矿模式
+    PC_To_AUTO_MODE=2,   //自动模式
+    
 }PC_Mode_t;
 
 // @todo 当前结构体嵌套过深,需要进行优化
@@ -118,7 +119,7 @@ typedef struct
         uint8_t count;
     } mouse;
 
-    Key_t key[4]; // 改为位域后的键盘索引,空间减少8倍,速度增加16~倍
+    Key_t key[5]; // 改为位域后的键盘索引,空间减少8倍,速度增加16~倍
 
     uint8_t key_count[3][16];
 } RC_ctrl_t;

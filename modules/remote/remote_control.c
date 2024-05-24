@@ -10,7 +10,7 @@
 // 遥控器数据
 static RC_ctrl_t rc_ctrl[2];     //[0]:当前数据TEMP,[1]:上一次的数据LAST.用于按键持续按下和切换的判断
 static uint8_t rc_init_flag = 0; // 遥控器初始化标志位
-static int count_1 =0;
+static int count_1 =1;
 static int count_2 =0;
 int mouse_count_r =0;
 // 遥控器拥有的串口实例,因为遥控器是单例,所以这里只有一个,就不封装了
@@ -60,15 +60,10 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
     
     //鼠标右键计数 
     if (rc_ctrl[LAST].mouse.press_r ==0 && rc_ctrl[TEMP].mouse.press_r ==1){
-        if (count_1!=2){
         count_1++;
-        }
-        else {
-            count_2++;
-            count_2%=4;
-        }
+        count_1%=2;
     }
-    rc_ctrl[TEMP].mouse.count=count_2-(count_1)%2+1;
+    rc_ctrl[TEMP].mouse.count=count_1+1;
     //本次值迭代
     //memcpy(&rc_ctrl[LAST].mouse, &rc_ctrl[TEMP].mouse, sizeof(rc_ctrl[TEMP].mouse));
 
@@ -80,7 +75,7 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
     else
         memset(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_CTRL], 0, sizeof(Key_t));
 
-    if ((rc_ctrl[TEMP].mouse.press_l)) // shift键按下
+    if (((1-rc_ctrl[TEMP].key[KEY_PRESS].ctrl)&& (rc_ctrl[TEMP].key[KEY_PRESS].shift))) // shift键按下
        {memcpy(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_SHIFT], &rc_ctrl[TEMP].key[KEY_PRESS], sizeof(Key_t));
         memset(&rc_ctrl[TEMP].key[KEY_PRESS], 0, sizeof(Key_t));
        }
@@ -94,7 +89,12 @@ static void sbus_to_rc(const uint8_t *sbus_buf)
     else
         memset(&rc_ctrl[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL], 0, sizeof(Key_t));
 
-    
+    if (rc_ctrl[TEMP].mouse.press_l) //鼠标左键
+        {memcpy(&rc_ctrl[TEMP].key[KEY_PRESS_MOUSE_LEFT], &rc_ctrl[TEMP].key[KEY_PRESS], sizeof(Key_t));
+        memset(&rc_ctrl[TEMP].key[KEY_PRESS], 0, sizeof(Key_t));
+        }
+    else
+        memset(&rc_ctrl[TEMP].key[KEY_PRESS_MOUSE_LEFT], 0, sizeof(Key_t));
 
     memcpy(&rc_ctrl[LAST], &rc_ctrl[TEMP], sizeof(RC_ctrl_t)); // 保存上一次的数据,用于按键持续按下和切换的判断
 
