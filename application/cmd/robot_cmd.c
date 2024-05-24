@@ -72,7 +72,7 @@ static Robot_Status_e robot_state; // 机器人整体工作状态
 float last_angle; // pitch的最后一次编码器角度
 extern int mouse_count_r;
 /**
- * @brief CMD初始化
+ * @brief CMD初始化/
  *
  */
 void RobotCMDInit()
