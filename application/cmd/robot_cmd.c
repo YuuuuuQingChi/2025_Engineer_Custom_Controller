@@ -174,8 +174,8 @@ static void RemoteControlSet()
 {
     // 左侧开关状态[上],右侧开关状态[上]
     if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_up(rc_data[TEMP].rc.switch_left)) {
-        chassis_cmd_send.vx = rc_data[TEMP].rc.rocker_l_ * 5*(7-lift_cmd_send.left_now/4000.0);
-        chassis_cmd_send.vy = rc_data[TEMP].rc.rocker_l1 * 2*(7-lift_cmd_send.left_now/4000.0);
+        chassis_cmd_send.vx = rc_data[TEMP].rc.rocker_l_ * 2*(10-lift_cmd_send.left_now/2300.0);
+        chassis_cmd_send.vy = rc_data[TEMP].rc.rocker_l1 * 5*(10-lift_cmd_send.left_now/2300.0);
         chassis_cmd_send.wz = rc_data[TEMP].rc.rocker_r_ * 15;
 
         if (is_range(rc_data[TEMP].rc.rocker_r1)) {
@@ -292,17 +292,17 @@ static void MouseKeySet()
         chassis_cmd_send.chassis_mode = CHASSIS_WALK;
         //
         if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].w || rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s) {
-            chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].w * 660 * 5*(7-lift_cmd_send.left_now/4000.0) - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 660 * 5*(7-lift_cmd_send.left_now/4000.0)) * ramp_calc(&chassis_vy_ramp);
+            chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].w * 660 * 5*(10-lift_cmd_send.left_now/2600.0) - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 660 * 5*(6-lift_cmd_send.left_now/4000.0)) * ramp_calc(&chassis_vy_ramp);
         } else {
             ramp_init(&chassis_vy_ramp, RAMP_TIME);
-            chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].w * 660 * 5*(7-lift_cmd_send.left_now/4000.0) - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 660 * 2*(7-lift_cmd_send.left_now/4000.0)) * ramp_calc(&chassis_vy_ramp);
+            chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].w * 660 * 5*(10-lift_cmd_send.left_now/2600.0) - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].s * 660 * 5*(6-lift_cmd_send.left_now/4000.0)) * ramp_calc(&chassis_vy_ramp);
         }
         //
         if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a || rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d) {
-            chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 660 * 2*(7-lift_cmd_send.left_now/4000.0) - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 660 * 15) * ramp_calc(&chassis_vx_ramp);
+            chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 660 * 2*(8-lift_cmd_send.left_now/3000.0) - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 660 * 2*(8-lift_cmd_send.left_now/3000.0)) * ramp_calc(&chassis_vx_ramp);
         } else {
             ramp_init(&chassis_vx_ramp, RAMP_TIME);
-            chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 660 * 5*(7-lift_cmd_send.left_now/4000.0) - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 660 * 15) * ramp_calc(&chassis_vx_ramp);
+            chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].d * 660 * 2*(8-lift_cmd_send.left_now/3000.0) - rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].a * 660 * 2*(8-lift_cmd_send.left_now/3000.0)) * ramp_calc(&chassis_vx_ramp);
         }
 
         if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].q || rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].e) {
