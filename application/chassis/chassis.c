@@ -21,12 +21,6 @@
 #include "general_def.h"
 #include "bsp_dwt.h"
 #include "referee_UI.h"
-//#include "arm_math.h"
-
-/* 根据robot_def.h中的macro自动计算的参数 */
-#define HALF_WHEEL_BASE  (WHEEL_BASE / 2.0f)     // 半轴距
-#define HALF_TRACK_WIDTH (TRACK_WIDTH / 2.0f)    // 半轮距
-#define PERIMETER_WHEEL  (RADIUS_WHEEL * 2 * PI) // 轮子周长
 
 
 static Publisher_t *chassis_pub;                    // 用于发布底盘的数据
@@ -47,12 +41,12 @@ void ChassisInit()
         .can_init_config.can_handle   = &hfdcan1,
         .controller_param_init_config = {
             .speed_PID = {
-                .Kp            = 3.2,
+                .Kp            = 3.3,
                 .Ki            = 0,  // 0
                 .Kd            = 0,  // 0
                 .IntegralLimit = 3000,
                 .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
-                .MaxOut        = 12000,
+                .MaxOut        = 14000,
                 },
            
         },
@@ -110,18 +104,6 @@ static void LimitChassisOutput()
     DJIMotorSetRef(motor_rb, vt_rb);
 }
 
-/**
- * @brief 根据每个轮子的速度反馈,计算底盘的实际运动速度,逆运动解算
- *        对于双板的情况,考虑增加来自底盘板IMU的数据
- *
- */
-static void EstimateSpeed()
-{
-    // 根据电机速度和陀螺仪的角速度进行解算,还可以利用加速度计判断是否打滑(如果有)
-    // chassis_feedback_data.vx vy wz =
-    //  ...
-}
-
 /* 机器人底盘控制核心任务 */
 void ChassisTask()
 {
@@ -129,12 +111,15 @@ void ChassisTask()
     // 获取新的控制信息
     SubGetMessage(chassis_sub, &chassis_cmd_recv);
 
-    if (chassis_cmd_recv.chassis_mode == CHASSIS_ZERO_FORCE) { // 如果出现重要模块离线或遥控器设置为急停,让电机停止
+    if (chassis_cmd_recv.chassis_mode == CHASSIS_ZERO_FORCE) 
+    { // 如果出现重要模块离线或遥控器设置为急停,让电机停止
         DJIMotorStop(motor_lf);
         DJIMotorStop(motor_rf);
         DJIMotorStop(motor_lb);
         DJIMotorStop(motor_rb);
-    } else { // 正常工作
+    } 
+    else if(chassis_cmd_recv.chassis_mode == CHASSIS_WALK) 
+    { // 正常工作
         DJIMotorEnable(motor_lf);
         DJIMotorEnable(motor_rf);
         DJIMotorEnable(motor_lb);
@@ -143,11 +128,7 @@ void ChassisTask()
 
     chassis_vx = chassis_cmd_recv.vx;
     chassis_vy =chassis_cmd_recv.vy;
-
-    // 根据控制模式进行正运动学解算,计算底盘输出
     MecanumCalculate();
-
-    // 根据裁判系统的反馈数据和电容数据对输出限幅并设定闭环参考值
     LimitChassisOutput();   
     PubPushMessage(chassis_pub, (void *)&chassis_feedback_data);
 

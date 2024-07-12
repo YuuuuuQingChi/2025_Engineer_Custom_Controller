@@ -36,9 +36,6 @@ void Lift_Init()
                 .IntegralLimit = 3000,
                 .MaxOut        = 15000,
             },
-            //.other_angle_feedback_ptr = &left_angle_motor->measure.total_angle,
-            // 还需要增加角速度额外反馈指针,注意方向,ins_task.md中有c板的bodyframe坐标系说明
-            //.other_speed_feedback_ptr = &gimbal_IMU_data->INS_data.INS_gyro[INS_YAW_ADDRESS_OFFSET],
         },
         .controller_setting_init_config = {
             .angle_feedback_source = MOTOR_FEED,
@@ -48,7 +45,6 @@ void Lift_Init()
             .motor_reverse_flag    = MOTOR_DIRECTION_NORMAL,
         },
         .motor_type = M3508};
-    // 电机对total_angle闭环,上电时为零,会保持静止,收到遥控器数据再动
     lift_config.can_init_config.tx_id    = 5;
     lift_left_motor = DJIMotorInit(&lift_config);
 
@@ -61,38 +57,25 @@ void Lift_Init()
 
 void Lift_Task()
 {
-// 获取云台控制数据
-    // 后续增加未收到数据的处理
-    SubGetMessage(lift_sub, &lift_cmd_recv);
 
-    // @todo:现在已不再需要电机反馈,实际上可以始终使用IMU的姿态数据来作为云台的反馈,yaw电机的offset只是用来跟随底盘
-    // 根据控制模式进行电机反馈切换和过渡,视觉模式在robot_cmd模块就已经设置好,gimbal只看yaw_ref和pitch_ref
+    SubGetMessage(lift_sub, &lift_cmd_recv);
     switch (lift_cmd_recv.lift_mode) {
-        // 停止
         case LIFT_STOP:
             DJIMotorStop(lift_left_motor);
             DJIMotorStop(lift_right_motor);
             break;
-        // 使用陀螺仪的反馈,底盘根据yaw电机的offset跟随云台或视觉模式采用
-        case LIFT: // 后续只保留此模式
+        case LIFT: 
             DJIMotorEnable(lift_left_motor);
             DJIMotorEnable(lift_right_motor);
-            //DJIMotorChangeFeed(lift_left_motor, ANGLE_LOOP, OTHER_FEED);
-            // DJIMotorChangeFeed(left_speed_motor, SPEED_LOOP, OTHER_FEED);
-            //DJIMotorChangeFeed(lift_right_motor, ANGLE_LOOP, OTHER_FEED);
-            //DJIMotorChangeFeed(right_speed_motor, SPEED_LOOP, OTHER_FEED);
-            DJIMotorSetRef(lift_left_motor, lift_cmd_recv.left_now); 
-            DJIMotorSetRef(lift_right_motor, lift_cmd_recv.right_now);
+            DJIMotorSetRef(lift_left_motor, lift_cmd_recv.left_angle); 
+            DJIMotorSetRef(lift_right_motor, lift_cmd_recv.right_angle);
             break;
         default:
             break;
     }
 
-    
-
-    
-    lift_feedback_data.new_left_angle  = lift_left_motor->measure.total_angle;
-    lift_feedback_data.new_right_angle = lift_right_motor->measure.total_angle;
+    lift_feedback_data.now_left_angle  = lift_left_motor->measure.total_angle;
+    lift_feedback_data.now_right_angle = lift_right_motor->measure.total_angle;
 
     // 推送消息
     PubPushMessage(lift_pub, (void *)&lift_feedback_data);

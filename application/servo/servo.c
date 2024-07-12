@@ -35,8 +35,8 @@ void Servo_Init(){
 void Servo_Task(){
     SubGetMessage(servo_sub, &servo_cmd_recv);
     
-    Servo_Motor_FreeAngle_Set(Pitch_Motor,servo_cmd_recv.pitch_now_angle);
-    Servo_Motor_FreeAngle_Set(Yaw_Motor,servo_cmd_recv.yaw_now_angle);
+    Servo_Motor_FreeAngle_Set(Pitch_Motor,servo_cmd_recv.pitch_angle);
+    Servo_Motor_FreeAngle_Set(Yaw_Motor,servo_cmd_recv.yaw_angle);
     // 推送消息
     PubPushMessage(servo_pub, (void *)&servo_feedback_data);
 }

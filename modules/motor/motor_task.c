@@ -2,12 +2,12 @@
 #include "LKmotor.h"
 #include "HT04.h"
 #include "dji_motor.h"
-#include "step_motor.h"
 #include "servo_motor.h"
+#include "DMmotor.h"
 
 void MotorControlTask()
 {
-    // static uint8_t cnt = 0; 设定不同电机的任务频率
+    static uint8_t cnt = 0; //设定不同电机的任务频率
     // if(cnt%5==0) //200hz
     // if(cnt%10==0) //100hz
     DJIMotorControl();
@@ -22,6 +22,11 @@ void MotorControlTask()
     // 将所有的CAN设备集中在一处发送,最高反馈频率仅能达到500Hz,为了更好的控制效果,应使用新的HTMotorControlInit()接口
 
     ServeoMotorControl();
-
+    // if(cnt % 4 == 0) 
+    // {
+    DMMotorControl();
+    // cnt = 0;
+    // }
+    // cnt++;
     // StepMotorControl();
 }

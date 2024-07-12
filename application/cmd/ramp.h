@@ -18,7 +18,8 @@
             0,           \
     }
 
-#define RAMP_TIME 100
+#define ACCLE_RAMP_TIME 400
+#define DECELE_RAMP_TIME 20
 
 // 斜坡类型，计算WASD移动映射在底盘的速度
 typedef struct ramp_t

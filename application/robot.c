@@ -15,16 +15,16 @@
 #include "buzzer.h"
 #include "chassis.h"
 #include "lift.h"
-#include "first.h"
+#include "arm.h"
 #include "robot_cmd.h"
-#include "second.h"
-#include "horizontal.h"
-#include "forward.h"
+#include "stretch.h"
 #include "referee_UI.h"
 #include "ui.h"
 #include "servo.h"
-int32_t flag_referee_init =0;
-static referee_info_t *referee_data; // 用于获取裁判系统的数据
+#include "vision_line.h"
+
+//int32_t flag_referee_init =0;
+//static referee_info_t *referee_data; // 用于获取裁判系统的数据
 
 void RobotInit()
 {
@@ -37,27 +37,24 @@ void RobotInit()
     RobotCMDInit();
     ChassisInit();
     Servo_Init();
-    referee_data = RefereeHardwareInit(&huart10); // 裁判系统初始化,会同时初始化UI
-    flag_referee_init=1;                 
+    //referee_data = RefereeHardwareInit(&huart10); // 裁判系统初始化,会同时初始化UI
+    //flag_referee_init=1;                 
     Lift_Init();
-    First_Stretch_Init();
-    Second_Stretch_Init();
-    Horizontal_Init();
-    Forward_Init();
-    uiInit();
+    Stretch_Init();
+    ARM_Init();
+    Vision_Int();
+    //uiInit();
+    Vision_Int();
     __enable_irq();
 }
 
 void RobotTask()
 {
-    
     RobotCMDTask();
     ChassisTask();
     Lift_Task();
-    First_Stretch_Task();
-    Second_Stretch_Task();
-    Horizontal_Task();
+    Stretch_Task();
     Servo_Task();
-    Forward_Task();
-    
+    ARM_Task();
+    Vision_Task();
 }

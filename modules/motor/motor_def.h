@@ -65,8 +65,8 @@ typedef enum
 } Feedback_Reverse_Flag_e;
 typedef enum
 {
-    MOTOR_STOP = 0,
-    MOTOR_ENABLED = 1,
+    MOTOR_STOP = 3,
+    MOTOR_ENABLED = 4,
 } Motor_Working_Type_e;
 
 /* 电机控制设置,包括闭环类型,反转标志和反馈来源 */
@@ -110,6 +110,9 @@ typedef enum
     LK_MS5005,
     DR_PDA04,
     DR_B0X,
+    DM4310 = 2,
+    DM6006,
+    DM8006,
 } Motor_Type_e;
 
 /**
@@ -137,6 +140,7 @@ typedef struct
     Motor_Control_Setting_s controller_setting_init_config;
     Motor_Type_e motor_type;
     CAN_Init_Config_s can_init_config;
+
 } Motor_Init_Config_s;
 
 #endif // !MOTOR_DEF_H

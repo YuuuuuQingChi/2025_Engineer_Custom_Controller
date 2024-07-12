@@ -28,7 +28,7 @@ static Graph_Data_t UI_Number_t[10];      // 数字
 static Publisher_t *ui_pub;                    // 用于发布底盘的数据
 static Subscriber_t *ui_sub;                   // 用于订阅底盘的控制命令
 
-extern PC_Mode_t PC_Mode;
+
 
 void uiInit()
 {
@@ -140,7 +140,7 @@ void My_UIGraphRefresh()
     // UICharDraw(&UI_State_sta[7], "ss7", UI_Graph_ADD, 9, UI_Color_Yellow, 30, 2, UI_Circle_t[3].start_x,UI_Circle_t[3].start_y, "AUTO");
     // UICharRefresh(&referee_info.referee_id, UI_State_sta[7]);
     
-    UIRectangleDraw(&UI_Rectangle[1],"sj1",UI_Graph_ADD,9,UI_Color_Purplish_red,4,rectangle_x[ui_cmd_recv.PC_Mode-1]-20,rectangle_y-35,rectangle_x[ui_cmd_recv.PC_Mode-1]+120,rectangle_y+10);
+   // UIRectangleDraw(&UI_Rectangle[1],"sj1",UI_Graph_ADD,9,UI_Color_Purplish_red,4,rectangle_x[ui_cmd_recv.PC_Mode-1]-20,rectangle_y-35,rectangle_x[ui_cmd_recv.PC_Mode-1]+120,rectangle_y+10);
 
     UIIntDraw(&UI_Number_t[0],"sm0",UI_Graph_ADD,9,UI_Color_White,20,3,250,string_y,ui_cmd_recv.auto_confirm_flag);
     UIIntDraw(&UI_Number_t[1],"sm1",UI_Graph_ADD,9,UI_Color_White,20,3,250,string_y-50,ui_cmd_recv.auto_decide_flag);   
@@ -189,7 +189,7 @@ void My_UIGraphRefresh()
         // UICircleDraw(&UI_Circle_t[8], "sc8", UI_Graph_Change, 9, ui_cmd_recv.air_up_gang_flag==1?5:8, 10, circle_x,circle_y-160, 20);
         // UICircleDraw(&UI_Circle_t[9], "sc9", UI_Graph_Change, 9, ui_cmd_recv.air_down_gang_flag==1?5:8, 10, circle_x,circle_y-220, 20);
 
-        UIRectangleDraw(&UI_Rectangle[1],"sj1",UI_Graph_Change,9,UI_Color_Purplish_red,4,rectangle_x[ui_cmd_recv.PC_Mode-1]-20,rectangle_y-35,rectangle_x[ui_cmd_recv.PC_Mode-1]+120,rectangle_y+10);
+    //    UIRectangleDraw(&UI_Rectangle[1],"sj1",UI_Graph_Change,9,UI_Color_Purplish_red,4,rectangle_x[ui_cmd_recv.PC_Mode-1]-20,rectangle_y-35,rectangle_x[ui_cmd_recv.PC_Mode-1]+120,rectangle_y+10);
         
         UIGraphRefresh(&referee_info.referee_id, 2, UI_Number_t[0],UI_Number_t[1]);
         //UIGraphRefresh(&referee_info.referee_id, 5, UI_Circle_t[0], UI_Circle_t[1], UI_Circle_t[2],UI_Circle_t [3], UI_Circle_t[4]);
@@ -197,13 +197,13 @@ void My_UIGraphRefresh()
         UIGraphRefresh(&referee_info.referee_id, 1, UI_Rectangle[1]);
     }
 }
-void BuzzerTask(void *argument)
-{
-    for (;;) {
-        if (flag_referee_init){
-            My_UIGraphRefresh();
-        }
-        uiTask();
-		osDelay(50);
-    }
-}
+// void BuzzerTask(void *argument)
+// {
+//     for (;;) {
+//         if (flag_referee_init){
+//             My_UIGraphRefresh();
+//         }
+//         uiTask();
+// 		osDelay(50);
+//     }
+// }

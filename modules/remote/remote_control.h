@@ -90,11 +90,7 @@ typedef union
     uint16_t keys; // 用于memcpy而不需要进行强制类型转换
 } Key_t;
 
-typedef enum{
-    PC_Get_Money=1,      //取矿模式
-    PC_To_AUTO_MODE=2,   //自动模式
-    
-}PC_Mode_t;
+
 
 // @todo 当前结构体嵌套过深,需要进行优化
 typedef struct

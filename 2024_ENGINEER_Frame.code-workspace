@@ -24,7 +24,8 @@
             "cmath": "c",
             "cstdio": "c",
             "UI.C": "cpp",
-            "compare": "c"
+            "compare": "c",
+            "type_traits": "c"
         },
         "[yaml]": {
             "editor.insertSpaces": true,

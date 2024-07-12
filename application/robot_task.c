@@ -26,7 +26,7 @@ void StartROBOTTASK(void *argument)
         robot_dt = DWT_GetTimeline_ms() - robot_start;
         if (robot_dt > 5)
             LOGERROR("[freeRTOS] ROBOT core Task is being DELAY! dt = [%f]", &robot_dt);
-        osDelay(3);
+        osDelay(1);
     }
 }
 
@@ -41,7 +41,7 @@ void StartMOTORTASK(void *argument)
         motor_dt = DWT_GetTimeline_ms() - motor_start;
         if (motor_dt > 1)
             LOGERROR("[freeRTOS] MOTOR Task is being DELAY! dt = [%f]", &motor_dt);
-        osDelay(3);
+        osDelay(1);
     }
 }
 

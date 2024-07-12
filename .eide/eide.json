@@ -3,7 +3,6 @@
   "type": "ARM",
   "dependenceList": [],
   "srcDirs": [
-    ".eide/deps",
     "Core",
     "Middlewares",
     "Drivers",
@@ -12,7 +11,8 @@
     "application",
     "USB_DEVICE",
     "application/UI",
-    "application/servo"
+    "application/servo",
+    "application/stretch"
   ],
   "virtualFolder": {
     "name": "<virtual_root>",
@@ -63,7 +63,6 @@
           "Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F",
           "Drivers/CMSIS/Device/ST/STM32H7xx/Include",
           "Drivers/CMSIS/Include",
-          ".eide/deps",
           "bsp",
           "bsp/dwt",
           "bsp/can",
@@ -119,13 +118,16 @@
           "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
           "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
           "application/UI",
-          "application/servo"
+          "application/servo",
+          "modules/motor/DMmotor",
+          "application/stretch",
+          "application/arm",
+          "application/vision"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",
           "modules/algorithm"
         ],
-        "sourceDirList": [],
         "defineList": [
           "DEBUG",
           "USE_HAL_DRIVER",
@@ -182,5 +184,5 @@
       }
     }
   },
-  "version": "3.3"
+  "version": "3.4"
 }
