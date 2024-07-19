@@ -130,7 +130,7 @@ static void initial_calc()
 
 
 /**
- * @brief CMD初始化
+ * @brief CMD初始化/
  *
  */
 void RobotCMDInit()
