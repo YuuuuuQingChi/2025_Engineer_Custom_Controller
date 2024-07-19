@@ -43,7 +43,45 @@ void RobotCMDInit();
  */
 void RobotCMDTask();
 
+typedef struct
+{
+    float stretch_left;
+    float stretch_right;
 
+    float lift_left;
+    float lift_right;
+    
+}initial;//便于统计最初的必要关节角度角度;
 
+typedef struct
+{
+    int16_t KX;
+    int16_t KY;
+    int16_t KW;
+    int16_t speed_change_flag;
+
+}chassis_speed;//底盘模式取决
+
+typedef struct
+{
+    int8_t control_mode;
+
+}mode_direction;
+
+typedef struct
+{
+    //步数
+    int8_t step1;
+    int8_t step2;
+    int8_t step3;
+    int8_t step4;
+    int8_t step5;
+    int8_t step6;
+    int8_t step7;
+    int8_t step8;
+    int8_t step9;
+    int8_t step10;
+
+}auto_mode;
 
 #endif // !ROBOT_CMD_H

@@ -37,8 +37,14 @@ extern ramp_t chassis_vy_ramp;
 extern ramp_t chassis_vw_ramp;
 extern ramp_t lift_l_ramp;
 extern ramp_t lift_r_ramp;
-extern ramp_t stretch_1_ramp;
-extern ramp_t stretch_2_ramp;
+extern ramp_t stretch_left_ramp;
+extern ramp_t stretch_right_ramp;
+extern ramp_t BIG_PITCH_ramp;
+extern ramp_t YAW_ramp;
+extern ramp_t BIG_ROLL_ramp;
+extern ramp_t SMALL_PITCH_ramp;
+extern ramp_t SMALL_ROLL_ramp;
+extern ramp_t GIMBAL_ramp;
 float ramp_calc(ramp_t *ramp);
 
 #endif

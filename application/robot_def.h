@@ -64,6 +64,13 @@ typedef enum{
     
 }SMALL_ROLL_mode_e;
 
+//GIMBAL模式设定
+typedef enum{
+    GIMBAL_START = 2,
+    GIMBAL_STOP = 3,
+    
+}GIMBAL_mode_e;
+
 
 
 
@@ -145,6 +152,15 @@ typedef struct
     SMALL_ROLL_mode_e SMALL_ROLL_mode;
 
 }SMALL_ROLL_Ctrl_Cmd_s;
+
+//GIMBAL角度控制
+typedef struct 
+{
+    
+    float angle;
+    GIMBAL_mode_e GIMBAL_mode;
+
+}GIMBAL_Ctrl_Cmd_s;
 
 typedef struct 
 {
@@ -246,6 +262,15 @@ typedef struct
     float now_angle;
     
 }SMALL_ROLL_Upload_Data_s;
+
+//GIMBAL
+typedef struct 
+{
+    float now_angle;
+    float current;
+    float speed;
+    
+}GIMBAL_Upload_Data_s;
 
 typedef struct 
 {

@@ -17,6 +17,7 @@ ServoInstance *ServoInit(Servo_Init_Config_s *Servo_Init_Config)
     servo->Channel = Servo_Init_Config->Channel;
 
     HAL_TIM_PWM_Start(Servo_Init_Config->htim, Servo_Init_Config->Channel);
+    servo->state = 1;
     servo_motor_instance[servo_idx++] = servo;
     return servo;
 }
@@ -34,26 +35,21 @@ void Servo_Motor_FreeAngle_Set(ServoInstance *Servo_Motor, int16_t S_angle)
     case Servo180:
         if (S_angle > 180)
             S_angle = 180;
-        if (S_angle<0){
-            S_angle=0;
-        }
         break;
     case Servo270:
         if (S_angle > 270)
             S_angle = 270;
         break;
     case Servo360:
-        if (S_angle > 21)
-            S_angle = 21;
-        if (S_angle<-179){
-            S_angle=-179;
-        }
+        if (S_angle > 100)
+            S_angle = 100;
         break;
     default:
         break;
     }
+    if (S_angle < 0)
+        S_angle = 0;
     Servo_Motor->Servo_Angle.free_angle = S_angle;
-    Servo_Motor->Servo_Angle.servo360speed=S_angle;
 }
 
 /**
@@ -79,6 +75,22 @@ void Servo_Motor_Type_Select(ServoInstance *Servo_Motor, int16_t mode)
     Servo_Motor->Servo_Angle_Type = mode;
 }
 
+//舵机使能
+void Servo_Motor_Start(ServoInstance *Servo_Motor){
+   
+        HAL_TIM_PWM_Start(Servo_Motor->htim, Servo_Motor->Channel);
+        Servo_Motor->state = 1;
+ 
+    
+}
+//舵机失能
+void Servo_Motor_Stop(ServoInstance *Servo_Motor){
+    if(Servo_Motor->state == 1)
+    {
+        HAL_TIM_PWM_Stop(Servo_Motor->htim, Servo_Motor->Channel);
+        Servo_Motor->state = 0;
+    }
+}
 /**
  * @brief 舵机输出控制
  *
@@ -92,7 +104,7 @@ void ServeoMotorControl()
         if (servo_motor_instance[i])
         {
             Servo_Motor = servo_motor_instance[i];
-
+            if(Servo_Motor->state == 0) continue;
             switch (Servo_Motor->Servo_type)
             {
             case Servo180:
@@ -115,7 +127,7 @@ void ServeoMotorControl()
                 break;
             case Servo360:
                 /*500-2500的占空比 500-1500对应正向转速 1500-2500对于反向转速*/
-                compare_value[i] =2290+ 10 * Servo_Motor->Servo_Angle.servo360speed;
+                compare_value[i] = 500 + 20 * Servo_Motor->Servo_Angle.servo360speed;
                 __HAL_TIM_SET_COMPARE(Servo_Motor->htim, Servo_Motor->Channel, compare_value[i]);
                 break;
             default:

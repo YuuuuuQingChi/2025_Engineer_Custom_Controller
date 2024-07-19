@@ -76,13 +76,22 @@ static Subscriber_t *vision_joint_data_sub;
 static Vision_Joint_Data_Upload_Data_s Vision_Joint_Data_fetch_data; 
 static Vision_Joint_Data_Ctrl_Cmd_s Vision_Joint_Data_cmd_send;  
 
+static Publisher_t *GIMBAL_cmd_pub;
+static Subscriber_t *GIMBAL_feed_sub;
+static GIMBAL_Upload_Data_s GIMBAL_fetch_data; 
+static GIMBAL_Ctrl_Cmd_s GIMBAL_Data_cmd_send;  
+
+static initial initial_angle;
+static chassis_speed chassis_speed_scale;
+static auto_mode auto_mode_step;
+static mode_direction mode;//2是自定义控制器。3是键鼠
+
 extern int mouse_count_r;
-struct 
-{
-    float stretch_left;
-    float stretch_right;
-    
-}initial_angle;//便于统计最初的必要关节角度角度;
+uint8_t big_pitch_stall_flag = 3;
+uint8_t gimbal_stall_flag = 3;
+float direction;
+float direction1;
+
 
 USARTInstance *vision_usart;
 
@@ -108,6 +117,15 @@ static void initial_calc()
 {
     initial_angle.stretch_left = stretch_fetch_data.now_left_angle;
     initial_angle.stretch_right = stretch_fetch_data.now_right_angle;
+    initial_angle.lift_left = lift_fetch_data.now_left_angle;
+    initial_angle.lift_right = lift_fetch_data.now_right_angle;
+
+    chassis_speed_scale.speed_change_flag = 3;//默认快速
+    mode.control_mode = 2;//默认自定义控制器
+
+    servo_cmd_send.yaw_angle = 95;
+    servo_cmd_send.pitch_angle = 140;
+
 }
 
 
@@ -151,6 +169,9 @@ void RobotCMDInit()
 
     vision_joint_data_pub  = PubRegister("vision_joint_data_cmd", sizeof(Vision_Joint_Data_Ctrl_Cmd_s));
     vision_joint_data_sub = SubRegister("vision_joint_data_feed", sizeof(Vision_Joint_Data_Upload_Data_s));
+
+    GIMBAL_cmd_pub  = PubRegister("GIMBAL_cmd", sizeof(GIMBAL_Ctrl_Cmd_s));
+    GIMBAL_feed_sub = SubRegister("GIMBAL_feed", sizeof(GIMBAL_Upload_Data_s));
 
     RobotCMDInit_VisionLine();
     initial_calc();
@@ -204,11 +225,11 @@ static float Stall(float reference_current,float target_angle,float current_angl
 void cmd_value_limit()
 {
 
-    lift_cmd_send.left_angle   = Limit_Set(lift_cmd_send.left_angle, -508.976105, -13802.6094);
-    lift_cmd_send.right_angle  = Limit_Set(lift_cmd_send.right_angle, 13762.1768, 428.773926);
+    lift_cmd_send.left_angle   = Limit_Set(lift_cmd_send.left_angle, initial_angle.lift_left , initial_angle.lift_left - 13293.633295);
+    lift_cmd_send.right_angle  = Limit_Set(lift_cmd_send.right_angle, initial_angle.lift_right + 13293.633295 , initial_angle.lift_right);
 
-    stretch_cmd_send.left_angle   = Limit_Set(stretch_cmd_send.left_angle, -768.91333,-13713.7959);
-    stretch_cmd_send.right_angle = Limit_Set(stretch_cmd_send.right_angle,13731.8115,729.00872 );
+    stretch_cmd_send.left_angle   = Limit_Set(stretch_cmd_send.left_angle, initial_angle.stretch_left,initial_angle.stretch_left - 7744.35205);
+    stretch_cmd_send.right_angle = Limit_Set(stretch_cmd_send.right_angle, 7744.35205 + initial_angle.stretch_right,initial_angle.stretch_right);
    
     BIG_ROLL_cmd_send.angle = Limit_Set(BIG_ROLL_cmd_send.angle,1.927786,-1.873998);
 
@@ -217,6 +238,10 @@ void cmd_value_limit()
     YAW_cmd_send.angle = Limit_Set(YAW_cmd_send.angle,1.721027,-1.78664);
 
     SMALL_PITCH_cmd_send.angle = Limit_Set(SMALL_PITCH_cmd_send.angle,1.84309864,-2.03803349);
+
+    VAL_LIMIT(servo_cmd_send.yaw_angle,50,130);
+    VAL_LIMIT(servo_cmd_send.pitch_angle,100,170);
+
 }
 
 /**
@@ -228,10 +253,90 @@ void cmd_value_limit()
 void Stall_Detection()
 {
     SMALL_PITCH_cmd_send.angle = Stall(SMALL_PITCH_fetch_data.torque,SMALL_PITCH_fetch_data.now_angle,SMALL_PITCH_cmd_send.angle,3.5,SMALL_PITCH_fetch_data.speed,2);
-    BigPitch_cmd_send.angle = Stall(BigPitch_fetch_data.torque,BigPitch_fetch_data.now_angle,BigPitch_cmd_send.angle,8,BigPitch_fetch_data.speed,1.4);
     BIG_ROLL_cmd_send.angle = Stall(BIG_ROLL_fetch_data.torque,BIG_ROLL_fetch_data.now_angle,BIG_ROLL_cmd_send.angle,3.5,BIG_ROLL_fetch_data.speed,1.1);
     YAW_cmd_send.angle = Stall(YAW_fetch_data.torque,YAW_fetch_data.now_angle,YAW_cmd_send.angle,7,YAW_fetch_data.speed,1);
+   //GIMBAL_Data_cmd_send.angle = Stall(GIMBAL_fetch_data.current,GIMBAL_fetch_data.now_angle,GIMBAL_Data_cmd_send.angle,11000,GIMBAL_fetch_data.speed,10);
+    
+    if(big_pitch_stall_flag == 3){
+        if((BigPitch_fetch_data.torque > 9.2 || BigPitch_fetch_data.torque < - 9.2) && (BigPitch_fetch_data.speed < 0.0149901428 || BigPitch_fetch_data.speed > -0.0149901428))
+        {
+            direction = BigPitch_cmd_send.angle - BigPitch_fetch_data.now_angle;//方向得知
+            big_pitch_stall_flag = 2;
 
+        }
+        else if ((BigPitch_fetch_data.torque > 12 || BigPitch_fetch_data.torque < - 12))
+        {
+            direction = BigPitch_cmd_send.angle - BigPitch_fetch_data.now_angle;//方向得知
+            big_pitch_stall_flag = 2;
+
+        }
+        else
+        {
+            big_pitch_stall_flag = 3;
+        }
+    }
+    if(big_pitch_stall_flag == 2)
+    {
+        //if(direction * (BigPitch_cmd_send.angle - BigPitch_fetch_data.now_angle) <= 0)
+        //{
+           // BigPitch_cmd_send.angle = BigPitch_cmd_send.angle;
+            //if(fabs(BigPitch_fetch_data.speed) > 0.0209901428) big_pitch_stall_flag=3;
+            //else big_pitch_stall_flag=2;
+        //}else if (direction * (BigPitch_cmd_send.angle - BigPitch_fetch_data.now_angle) > 0)
+        //{
+          //  BigPitch_cmd_send.angle = BigPitch_fetch_data.now_angle;  
+            //big_pitch_stall_flag=2;
+        //}
+         float limit_angle = 0.05;
+        //  if(direction * (BigPitch_cmd_send.angle - BigPitch_fetch_data.now_angle) <= 0)
+        // {
+        //     BigPitch_cmd_send.angle = BigPitch_cmd_send.angle;
+        //     big_pitch_stall_flag = 3;
+        // }
+        VAL_LIMIT(BigPitch_cmd_send.angle, BigPitch_fetch_data.now_angle-limit_angle, BigPitch_fetch_data.now_angle+limit_angle);
+            if(fabs(BigPitch_fetch_data.speed) > 0.0209901428) big_pitch_stall_flag=3;
+    }
+
+
+    if(gimbal_stall_flag == 3){
+        if((GIMBAL_fetch_data.current > 3700 || GIMBAL_fetch_data.current < - 3700) && (GIMBAL_fetch_data.speed < 2 || GIMBAL_fetch_data.speed > -2))
+        {
+            direction = GIMBAL_Data_cmd_send.angle - GIMBAL_fetch_data.now_angle;//方向得知
+            gimbal_stall_flag = 2;
+
+        }
+        // else if ((GIMBAL_fetch_data.current > 7200 || GIMBAL_fetch_data.current < - 7200))
+        // {
+        //     direction = GIMBAL_Data_cmd_send.angle - GIMBAL_fetch_data.now_angle;//方向得知
+        //     gimbal_stall_flag = 2;
+
+        // }
+        else
+        {
+            gimbal_stall_flag = 3;
+        }
+    }
+    if(gimbal_stall_flag == 2)
+    {
+        if(direction * (GIMBAL_Data_cmd_send.angle - GIMBAL_fetch_data.now_angle) < 0)
+        {
+            GIMBAL_Data_cmd_send.angle = GIMBAL_Data_cmd_send.angle;
+            if(fabs(GIMBAL_fetch_data.speed) > 2) gimbal_stall_flag=3;
+            else gimbal_stall_flag = 2;
+        }else if (direction * (GIMBAL_Data_cmd_send.angle - GIMBAL_fetch_data.now_angle) > 0)
+        {
+            GIMBAL_Data_cmd_send.angle = GIMBAL_fetch_data.now_angle;  
+            gimbal_stall_flag = 2;
+        }
+       
+         // if(direction * (BigPitch_cmd_send.angle - BigPitch_fetch_data.now_angle) <= 0)
+        // {
+        //     BigPitch_cmd_send.angle = BigPitch_cmd_send.angle;
+        //     big_pitch_stall_flag = 3;
+        // }
+        //VAL_LIMIT(BigPitch_cmd_send.angle, BigPitch_fetch_data.now_angle-limit_angle, BigPitch_fetch_data.now_angle+limit_angle);
+        //if(fabs(BigPitch_fetch_data.speed) > 0.0209901428) big_pitch_stall_flag=3;
+    }
 
 }
 
@@ -274,6 +379,15 @@ static void RemoteControlSet()
             stretch_cmd_send.left_angle = stretch_fetch_data.now_left_angle + rc_data[TEMP].rc.rocker_l1 / 10.0;
             stretch_cmd_send.right_angle =  stretch_fetch_data.now_right_angle - rc_data[TEMP].rc.rocker_l1 / 10.0;
         }
+       
+            servo_cmd_send.pitch_angle -= 0.04 * rc_data[TEMP].rc.rocker_r1 / 660.0;
+            servo_cmd_send.yaw_angle   -= 0.04 * rc_data[TEMP].rc.rocker_r_ / 660.0;
+        
+        if(is_range(rc_data[TEMP].rc.rocker_l_))
+        {
+            GIMBAL_Data_cmd_send.angle = GIMBAL_fetch_data.now_angle + rc_data[TEMP].rc.rocker_l_ / 660.0 * 300;
+        }
+       
 
     // 左侧开关状态[上],右侧开关状态[下]
     }
@@ -305,22 +419,6 @@ static void RemoteControlSet()
             SMALL_ROLL_cmd_send.speed = 0;
         }
     }
-    // 左侧开关状态[中],右侧开关状态[下]
-    if ((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_mid(rc_data[TEMP].rc.switch_left)) {
-
-        servo_cmd_send.pitch_angle = rc_data[TEMP].rc.rocker_r1 / 660.0 * 180;
-        servo_cmd_send.yaw_angle   = rc_data[TEMP].rc.rocker_l_ / 660.0 * 90;
-        if (servo_cmd_send.pitch_angle > 180) {
-            servo_cmd_send.pitch_angle = 180;
-        } else if (servo_cmd_send.pitch_angle < -180) {
-            servo_cmd_send.pitch_angle = -180;
-        }
-        if (servo_cmd_send.yaw_angle > 21) {
-            servo_cmd_send.yaw_angle = 21;
-        } else if (servo_cmd_send.yaw_angle < -179) {
-            servo_cmd_send.yaw_angle = -179;
-        }
-    }
 } 
 
 /**
@@ -339,6 +437,7 @@ static void Emergency_Handling()
         BIG_ROLL_cmd_send.BIG_ROLL_mode             = BIG_ROLL_STOP;
         SMALL_PITCH_cmd_send.SMALL_PITCH_mode       = SMALL_PITCH_STOP;
         SMALL_ROLL_cmd_send.SMALL_ROLL_mode         = SMALL_ROLL_STOP;
+        GIMBAL_Data_cmd_send.angle                  = GIMBAL_STOP;
 
         if (is_range(rc_data[TEMP].rc.dial)) {
             __set_FAULTMASK(1);
@@ -353,6 +452,7 @@ static void Emergency_Handling()
         BIG_ROLL_cmd_send.BIG_ROLL_mode             = BIG_ROLL_START;
         SMALL_PITCH_cmd_send.SMALL_PITCH_mode       = SMALL_PITCH_START;
         SMALL_ROLL_cmd_send.SMALL_ROLL_mode         = SMALL_ROLL_START;
+        GIMBAL_Data_cmd_send.GIMBAL_mode            = GIMBAL_START;
     }
 }
 
@@ -360,83 +460,83 @@ static void Emergency_Handling()
  * @brief 输入为键鼠时模式和控制量设置
  *
  */
-static void MouseKeySet()
+static void Chassis_MouseKeySet()
 {
 
-    servo_cmd_send.pitch_angle += (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].w - rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].s) * 0.5;
-    servo_cmd_send.yaw_angle += (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].a - rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].d) * 0.2;
-    //底盘
-    if (servo_cmd_send.pitch_angle > 180) {
-        servo_cmd_send.pitch_angle = 180;
-    } else if (servo_cmd_send.pitch_angle < 0) {
-        servo_cmd_send.pitch_angle = 0;
+    if(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].c)
+    {
+        chassis_speed_scale.speed_change_flag = 3;
     }
-    if (servo_cmd_send.yaw_angle > 21) {
-        servo_cmd_send.yaw_angle = 21;
-    } else if (servo_cmd_send.yaw_angle < -179) {
-        servo_cmd_send.yaw_angle = -179;
+    else if(rc_data[TEMP].key[KEY_PRESS].c)
+    {
+        chassis_speed_scale.speed_change_flag = 4;
     }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].c)
+    {
+        chassis_speed_scale.speed_change_flag = 2;
+    }
+
+    if (chassis_speed_scale.speed_change_flag == 2)
+    {
+        chassis_speed_scale.KW = 5.5;
+        chassis_speed_scale.KX = 5.5;
+        chassis_speed_scale.KY = 5.5;    
+        }
+    else if(chassis_speed_scale.speed_change_flag == 3)
+    {
+        chassis_speed_scale.KW = 7;
+        chassis_speed_scale.KX = 14;
+        chassis_speed_scale.KY = 10;
+    }
+    else if(chassis_speed_scale.speed_change_flag == 4)
+    {
+        chassis_speed_scale.KW = 12;
+        chassis_speed_scale.KX = 32;
+        chassis_speed_scale.KY = 20;
+    }
+  
     if (rc_data[TEMP].key[KEY_PRESS].w || rc_data[TEMP].key[KEY_PRESS].s) {
-        chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 28 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 28) * ramp_calc(&chassis_vy_ramp);
+        chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS].w * 660 * chassis_speed_scale.KX - rc_data[TEMP].key[KEY_PRESS].s * 660 * chassis_speed_scale.KX) * ramp_calc(&chassis_vy_ramp);
     } 
     else {
-        ramp_init(&chassis_vy_ramp, ACCLE_RAMP_TIME);
+        ramp_init(&chassis_vy_ramp, 600);
         if(chassis_cmd_send.vy > 0)
         {
-            chassis_cmd_send.vy -= DECELE_RAMP_TIME;
+            chassis_cmd_send.vy -= 60;
         }
         else if(chassis_cmd_send.vy < 0)
         {
-            chassis_cmd_send.vy += DECELE_RAMP_TIME;
+            chassis_cmd_send.vy += 60;
         }
     }
     if (rc_data[TEMP].key[KEY_PRESS].a || rc_data[TEMP].key[KEY_PRESS].d) {
-        chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS].d * 660 * 20 - rc_data[TEMP].key[KEY_PRESS].a * 660 * 20) * ramp_calc(&chassis_vx_ramp);
+        chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS].d * 660 * chassis_speed_scale.KY - rc_data[TEMP].key[KEY_PRESS].a * 660 * chassis_speed_scale.KY) * ramp_calc(&chassis_vx_ramp);
     } else {
-        ramp_init(&chassis_vx_ramp, ACCLE_RAMP_TIME);
+        ramp_init(&chassis_vx_ramp, 700);
         if(chassis_cmd_send.vx > 0)
         {
-            chassis_cmd_send.vx -= DECELE_RAMP_TIME;
+            chassis_cmd_send.vx -= 80;
         }
         else if(chassis_cmd_send.vx < 0)
         {
-            chassis_cmd_send.vx += DECELE_RAMP_TIME;
+            chassis_cmd_send.vx += 80;
         }
     }
     if (rc_data[TEMP].key[KEY_PRESS].q || rc_data[TEMP].key[KEY_PRESS].e) {
-        chassis_cmd_send.wz = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12) * ramp_calc(&chassis_vw_ramp);
+        chassis_cmd_send.wz = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * chassis_speed_scale.KW +rc_data[TEMP].key[KEY_PRESS].e * 660 * chassis_speed_scale.KW) * ramp_calc(&chassis_vw_ramp);
     } else {
         ramp_init(&chassis_vw_ramp, ACCLE_RAMP_TIME);
         if(chassis_cmd_send.wz > 0)
         {
-            chassis_cmd_send.wz -= 30;  
+            chassis_cmd_send.wz -= 120;  
         }
         else if(chassis_cmd_send.wz < 0)
         {
-            chassis_cmd_send.wz += 30;
+            chassis_cmd_send.wz += 120;
         }
     }
-    // //伸出
-    // stretch_cmd_send.left_angle += rc_data[TEMP].key[KEY_PRESS].x * 16 - rc_data[TEMP].key[KEY_PRESS_MOUSE_LEFT].x * 16;
-    // stretch_cmd_send.right_angle -= rc_data[TEMP].key[KEY_PRESS].x * 16 - rc_data[TEMP].key[KEY_PRESS_MOUSE_LEFT].x * 16;
-    // //升降
-    // if(rc_data[TEMP].key[KEY_PRESS].c )
-    // {
-    //     lift_cmd_send.left_angle = lift_fetch_data.now_left_angle + 200 * ramp_calc(&lift_l_ramp);
-    //     lift_cmd_send.right_angle = lift_fetch_data.now_right_angle - 200 * ramp_calc(&lift_r_ramp);
-    // }
-    // else if (rc_data[TEMP].key[KEY_PRESS_MOUSE_LEFT].c)
-    // {
-    //     lift_cmd_send.left_angle = lift_fetch_data.now_left_angle - 200 * ramp_calc(&lift_l_ramp);
-    //     lift_cmd_send.right_angle = lift_fetch_data.now_right_angle + 200 * ramp_calc(&lift_r_ramp);
-    // }
-    // else{
-    //     ramp_init(&lift_l_ramp, ACCLE_RAMP_TIME);
-    //     ramp_init(&lift_r_ramp, ACCLE_RAMP_TIME);
-    // }
-
        
-    if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].r) {
+    if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL].r) {
         // 重新上电达妙板子
         __set_FAULTMASK(1);
         NVIC_SystemReset();
@@ -466,12 +566,13 @@ void air_controll()
     }
         
 }
-
+/**
+ * @brief 自定义控制器的控制
+ * 
+ */
 void Vision_Control()
 {
-    //暂时是遥控器决定启停
-    if(((switch_is_mid(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)))
-    {
+    
         //要加上防断连
         BIG_ROLL_cmd_send.angle = Vision_Joint_Data_fetch_data.vision_big_roll;
         SMALL_PITCH_cmd_send.angle = Vision_Joint_Data_fetch_data.vision_small_pitch;
@@ -495,53 +596,179 @@ void Vision_Control()
         ramp_init(&lift_l_ramp, 800);
         ramp_init(&lift_r_ramp, 800);
     }
-    }
-    if (rc_data[TEMP].key[KEY_PRESS].w || rc_data[TEMP].key[KEY_PRESS].s) {
-        chassis_cmd_send.vy = (rc_data[TEMP].key[KEY_PRESS].w * 660 * 28 - rc_data[TEMP].key[KEY_PRESS].s * 660 * 28) * ramp_calc(&chassis_vy_ramp);
-    } 
-    else {
-        ramp_init(&chassis_vy_ramp, ACCLE_RAMP_TIME);
-        if(chassis_cmd_send.vy > 0)
-        {
-            chassis_cmd_send.vy -= DECELE_RAMP_TIME;
-        }
-        else if(chassis_cmd_send.vy < 0)
-        {
-            chassis_cmd_send.vy += DECELE_RAMP_TIME;
-        }
-    }
-    if (rc_data[TEMP].key[KEY_PRESS].a || rc_data[TEMP].key[KEY_PRESS].d) {
-        chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS].d * 660 * 20 - rc_data[TEMP].key[KEY_PRESS].a * 660 * 20) * ramp_calc(&chassis_vx_ramp);
-    } else {
-        ramp_init(&chassis_vx_ramp, ACCLE_RAMP_TIME);
-        if(chassis_cmd_send.vx > 0)
-        {
-            chassis_cmd_send.vx -= DECELE_RAMP_TIME;
-        }
-        else if(chassis_cmd_send.vx < 0)
-        {
-            chassis_cmd_send.vx += DECELE_RAMP_TIME;
-        }
-    }
-    if (rc_data[TEMP].key[KEY_PRESS].q || rc_data[TEMP].key[KEY_PRESS].e) {
-        chassis_cmd_send.wz = (-rc_data[TEMP].key[KEY_PRESS].q * 660 * 12 +rc_data[TEMP].key[KEY_PRESS].e * 660 * 12) * ramp_calc(&chassis_vw_ramp);
-    } else {
-        ramp_init(&chassis_vw_ramp, ACCLE_RAMP_TIME);
-        if(chassis_cmd_send.wz > 0)
-        {
-            chassis_cmd_send.wz -= 30;  
-        }
-        else if(chassis_cmd_send.wz < 0)
-        {
-            chassis_cmd_send.wz += 30;
-        }
-    }
+    
+
+
     if(Vision_Joint_Data_fetch_data.custom_controller_comm_recv != 0xff)
     {
         //这里加上UI反馈
     }
+
+
     
 }
+
+/**
+ * @brief 关节的键鼠控制
+ * @attention shift反转 ctrl换小关节
+ */
+static void Joint_MouseKeySet()
+{
+    if(rc_data[TEMP].key[KEY_PRESS].z)
+    {
+        lift_cmd_send.left_angle = lift_fetch_data.now_left_angle + 200 * ramp_calc(&lift_l_ramp);
+        lift_cmd_send.right_angle = lift_fetch_data.now_right_angle - 200 * ramp_calc(&lift_r_ramp);
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].z)
+    {
+        lift_cmd_send.left_angle = lift_fetch_data.now_left_angle - 200 * ramp_calc(&lift_l_ramp);
+        lift_cmd_send.right_angle = lift_fetch_data.now_right_angle + 200 * ramp_calc(&lift_r_ramp);
+    }
+    else{
+        lift_cmd_send.left_angle = lift_fetch_data.now_left_angle;
+        lift_cmd_send.right_angle = lift_fetch_data.now_right_angle;
+        ramp_init(&lift_l_ramp, 800);
+        ramp_init(&lift_r_ramp, 800);
+    }
+
+
+    if(rc_data[TEMP].key[KEY_PRESS].x)
+    {
+        stretch_cmd_send.left_angle = stretch_fetch_data.now_left_angle + 100 * ramp_calc(&stretch_left_ramp);
+        stretch_cmd_send.right_angle = stretch_fetch_data.now_right_angle - 100 * ramp_calc(&stretch_right_ramp);
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].x)
+    {
+        stretch_cmd_send.left_angle = stretch_fetch_data.now_left_angle - 100 * ramp_calc(&stretch_left_ramp);
+        stretch_cmd_send.right_angle = stretch_fetch_data.now_right_angle + 100 * ramp_calc(&stretch_right_ramp);
+    }
+    else{
+        stretch_cmd_send.left_angle = stretch_fetch_data.now_left_angle;
+        stretch_cmd_send.right_angle = stretch_fetch_data.now_right_angle;
+        ramp_init(&stretch_left_ramp, 800);
+        ramp_init(&stretch_right_ramp, 800);
+    }
+
+
+    //大ROLL左水平
+    if (rc_data[TEMP].key[KEY_PRESS].b){
+        BIG_ROLL_cmd_send.angle = BIG_ROLL_fetch_data.now_angle + 0.3 * ramp_calc(&BIG_ROLL_ramp);
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].b)
+    {
+        BIG_ROLL_cmd_send.angle = BIG_ROLL_fetch_data.now_angle - 0.3 * ramp_calc(&BIG_ROLL_ramp);
+    }
+    else{
+        BIG_ROLL_cmd_send.angle = BIG_ROLL_fetch_data.now_angle;
+        ramp_init(&BIG_ROLL_ramp, 400);
+    }
+
+
+    //YAW
+    if (rc_data[TEMP].key[KEY_PRESS].g){
+        YAW_cmd_send.angle = YAW_fetch_data.now_angle - 0.12 * ramp_calc(&YAW_ramp);
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].g)
+    {
+        YAW_cmd_send.angle = YAW_fetch_data.now_angle + 0.12 * ramp_calc(&YAW_ramp);
+    }
+    else{
+        YAW_cmd_send.angle = YAW_fetch_data.now_angle;
+        ramp_init(&YAW_ramp, 400);
+    }
+
+
+    //BIG_PITCH
+    if (rc_data[TEMP].key[KEY_PRESS].f){
+        BigPitch_cmd_send.angle  = BigPitch_fetch_data.now_angle - 0.3 * ramp_calc(&BIG_PITCH_ramp); 
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].f)
+    {
+        BigPitch_cmd_send.angle  = BigPitch_fetch_data.now_angle + 0.3 * ramp_calc(&BIG_PITCH_ramp); 
+    }
+    else{
+        BigPitch_cmd_send.angle  = BigPitch_fetch_data.now_angle;
+        ramp_init(&BIG_PITCH_ramp, 1000);
+    }
+
+
+    //SMALL_PITCH
+    if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].f) {
+        SMALL_PITCH_cmd_send.angle = SMALL_PITCH_fetch_data.now_angle - 0.2 * ramp_calc(&SMALL_PITCH_ramp);
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL].f)
+    {
+        SMALL_PITCH_cmd_send.angle = SMALL_PITCH_fetch_data.now_angle + 0.2 * ramp_calc(&SMALL_PITCH_ramp);
+    }
+    else
+    {
+        SMALL_PITCH_cmd_send.angle = SMALL_PITCH_fetch_data.now_angle;
+        ramp_init(&SMALL_PITCH_ramp, 1000);
+    }
+
+
+    //SMALL_ROLL
+    if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].b) {
+
+        SMALL_ROLL_cmd_send.speed = 8000;
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL].b) 
+    {
+
+        SMALL_ROLL_cmd_send.speed = -8000;
+    }
+    else
+    {
+        SMALL_ROLL_cmd_send.speed = 0;
+    }
+}
+
+
+/**
+ * @brief 控制器和键鼠的通用控制
+ * 
+ */
+static void General_Control()
+{
+    //ctrl加w  s控制图传升降
+    if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].w)
+    {
+        GIMBAL_Data_cmd_send.angle = GIMBAL_fetch_data.now_angle - 400 * ramp_calc(&GIMBAL_ramp);
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].s)
+    {
+        GIMBAL_Data_cmd_send.angle = GIMBAL_fetch_data.now_angle + 400 * ramp_calc(&GIMBAL_ramp);
+    }
+    else{
+        ramp_init(&GIMBAL_ramp, 1200);
+    }
+    if(rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].a)
+    {
+        servo_cmd_send.yaw_angle += 0.08;
+    }
+    else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].d)
+    {
+        servo_cmd_send.yaw_angle -= 0.08;
+    }
+    if(rc_data[TEMP].mouse.x > 1)
+    {
+        servo_cmd_send.pitch_angle += 0.04;
+    }
+    else if (rc_data[TEMP].mouse.x < -1)
+    {
+        servo_cmd_send.pitch_angle -= 0.04;
+    }
+    // if(rc_data[TEMP].mouse.y > 2)
+    // {
+    //     servo_cmd_send.pitch_angle += 0.04;
+    // }
+    // else if (rc_data[TEMP].mouse.y < -2)
+    // {
+    //     servo_cmd_send.pitch_angle -= 0.04;
+    // }
+    
+}
+
 /**
  * @brief 一控多关节的函数，后续会移植到自动模式，它只控制末端姿态在xy轴平面的移动
  * @attention yaw到末端22cm
@@ -555,13 +782,10 @@ void Multi_Joint_Motion_Solution()
         BIG_ROLL_cmd_send.angle = 1.570795;
         SMALL_PITCH_cmd_send.angle = -1.470795;
         YAW_cmd_send.angle = - rc_data[TEMP].rc.rocker_r_ / 660.0 * 0.15 + YAW_fetch_data.now_angle;
-        //暂时是定死的，会改的
         BigPitch_cmd_send.angle = 0;
        
         stretch_cmd_send.left_angle = left_angle + (1 - cos(YAW_fetch_data.now_angle)) * 18 / 6.4 * 360 * 11;
         stretch_cmd_send.right_angle = right_angle - (1 - cos(YAW_fetch_data.now_angle)) * 18 / 6.4 * 360 * 11;
-        
-
     }
     else
     {
@@ -569,6 +793,15 @@ void Multi_Joint_Motion_Solution()
         right_angle = stretch_fetch_data.now_right_angle;
     }
 }
+
+static void Auto_Mode()
+{
+  if(mode.control_mode == 2)
+  {
+
+  }
+}
+
 
 /**
  * @brief CMD核心任务
@@ -588,24 +821,44 @@ void RobotCMDTask()
     SubGetMessage(SMALL_PITCH_feed_sub, (void *)&SMALL_PITCH_fetch_data);
     SubGetMessage(SMALL_ROLL_feed_sub, (void *)&SMALL_ROLL_fetch_data);
     SubGetMessage(vision_joint_data_sub, (void *)&Vision_Joint_Data_fetch_data);
+    SubGetMessage(GIMBAL_feed_sub, (void *)&GIMBAL_fetch_data);
+
 
     Emergency_Handling();
 
+    if(rc_data[TEMP].mouse.press_l)
+    {
+        mode.control_mode = 2;
+    }
+    else if (rc_data[TEMP].mouse.press_r)
+    {
+        mode.control_mode = 3;
+    }
+   
     if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left))
     {
-    MouseKeySet();
+        General_Control();
+        Chassis_MouseKeySet();
+        if(mode.control_mode == 2)
+        {
+            Vision_Control();
+        }
+        else if (mode.control_mode == 3)
+        {
+            Joint_MouseKeySet();
+        }
     }
     else{
-    RemoteControlSet();
+        RemoteControlSet();
     }
 
-    Vision_Control();
     Multi_Joint_Motion_Solution();
 
-    cmd_value_limit();
     Stall_Detection();
+    cmd_value_limit();
 
     air_controll();
+
 
     PubPushMessage(ui_cmd_pub, (void *)&ui_cmd_send);
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
@@ -618,6 +871,8 @@ void RobotCMDTask()
     PubPushMessage(SMALL_PITCH_cmd_pub, (void *)&SMALL_PITCH_cmd_send);
     PubPushMessage(SMALL_ROLL_cmd_pub, (void *)&SMALL_ROLL_cmd_send);
     PubPushMessage(vision_joint_data_pub, (void *)&Vision_Joint_Data_cmd_send);
+    PubPushMessage(GIMBAL_cmd_pub, (void *)&GIMBAL_Data_cmd_send);
+
 
 
 }

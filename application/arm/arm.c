@@ -7,10 +7,10 @@
 #include "encoder.h"
 #include "DMmotor.h"
 static DMMotorInstance *BIG_PITCH, *YAW, *BIG_ROLL, *SMALL_PITCH;
-static DJIMotorInstance *SMALL_ROLL;
+static DJIMotorInstance *SMALL_ROLL, *GIMBAL;//GIMBAL min167.298615
 
-static Publisher_t *BIG_PITCH_pub , *YAW_pub , *BIG_ROLL_pub , *SMALL_PITCH_pub , *SMALL_ROLL_pub;
-static Subscriber_t *BIG_PITCH_sub , *YAW_sub , *BIG_ROLL_sub , *SMALL_PITCH_sub , *SMALL_ROLL_sub; 
+static Publisher_t *BIG_PITCH_pub , *YAW_pub , *BIG_ROLL_pub , *SMALL_PITCH_pub , *SMALL_ROLL_pub , *GIMBAL_pub;
+static Subscriber_t *BIG_PITCH_sub , *YAW_sub , *BIG_ROLL_sub , *SMALL_PITCH_sub , *SMALL_ROLL_sub , *GIMBAL_sub; 
 
 static BigPitch_Upload_Data_s BigPitch_feedback_data; 
 static BigPitch_Ctrl_Cmd_s BigPitch_cmd_recv;       
@@ -26,6 +26,9 @@ static SMALL_PITCH_Ctrl_Cmd_s SMALL_PITCH_cmd_recv;
 
 static SMALL_ROLL_Upload_Data_s SMALL_ROLL_feedback_data;
 static SMALL_ROLL_Ctrl_Cmd_s SMALL_ROLL_cmd_recv; 
+
+static GIMBAL_Upload_Data_s GIMBAL_feedback_data;
+static GIMBAL_Ctrl_Cmd_s GIMBAL_cmd_recv; 
 
 
 void ARM_Init()
@@ -121,11 +124,48 @@ void ARM_Init()
     SMALL_ROLL = DJIMotorInit(&SMALL_ROLL_config);
     SMALL_ROLL_pub = PubRegister("SMALL_ROLL_feed", sizeof(SMALL_ROLL_Upload_Data_s));
     SMALL_ROLL_sub = SubRegister("SMALL_ROLL_cmd", sizeof(SMALL_ROLL_Ctrl_Cmd_s));
+
+    Motor_Init_Config_s GIMBAL_config = {
+        .can_init_config = {
+            .can_handle = &hfdcan3,
+        },
+        .controller_param_init_config = {
+            .speed_PID = {
+                .Kp            = 0.8, // 4.5
+                .Ki            = 0,   // 0
+                .Kd            = 0,   // 0
+                .IntegralLimit = 200,
+                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                .MaxOut        = 15000,
+            },
+            .angle_PID = {
+                .Kp            = 60,
+                .Ki            = 0,
+                .Kd            = 0,
+                .Improve       = PID_Trapezoid_Intergral | PID_Integral_Limit | PID_Derivative_On_Measurement,
+                .MaxOut        = 18000,
+            }
+        },
+        .controller_setting_init_config = {
+            .angle_feedback_source = MOTOR_FEED,
+            .speed_feedback_source = MOTOR_FEED,
+            .outer_loop_type       = ANGLE_LOOP,
+            .close_loop_type       = ANGLE_LOOP | SPEED_LOOP,
+            .motor_reverse_flag    = MOTOR_DIRECTION_NORMAL,
+        },
+        .motor_type = M3508};
+    GIMBAL_config.can_init_config.tx_id    = 3;
+    GIMBAL = DJIMotorInit(&GIMBAL_config);
+    GIMBAL_pub = PubRegister("GIMBAL_feed", sizeof(GIMBAL_Upload_Data_s));
+    GIMBAL_sub = SubRegister("GIMBAL_cmd", sizeof(GIMBAL_Ctrl_Cmd_s));
+
+
     DMMotorStop(BIG_PITCH);
     DMMotorStop(BIG_ROLL);
     DMMotorStop(YAW);
     DMMotorStop(SMALL_PITCH);
     DJIMotorStop(SMALL_ROLL);
+    DJIMotorStop(GIMBAL);
 }
 void ARM_Task()
 {
@@ -134,7 +174,8 @@ void ARM_Task()
     SubGetMessage(BIG_ROLL_sub, &BIG_ROLL_cmd_recv);
     SubGetMessage(SMALL_PITCH_sub, &SMALL_PITCH_cmd_recv);
     SubGetMessage(SMALL_ROLL_sub, &SMALL_ROLL_cmd_recv);
-    
+    SubGetMessage(GIMBAL_sub, &GIMBAL_cmd_recv);
+
     if(BigPitch_cmd_recv.BIG_PITCH_mode == BIG_PITCH_START)
     {
         DMMotorEnable(BIG_PITCH);
@@ -142,6 +183,7 @@ void ARM_Task()
         DMMotorEnable(YAW);
         DMMotorEnable(SMALL_PITCH);
         DJIMotorEnable(SMALL_ROLL);
+        DJIMotorEnable(GIMBAL);
     }
     else if (BigPitch_cmd_recv.BIG_PITCH_mode == BIG_PITCH_STOP)
     {
@@ -150,6 +192,7 @@ void ARM_Task()
         DMMotorStop(YAW);
         DMMotorStop(SMALL_PITCH);
         DJIMotorStop(SMALL_ROLL);
+        DJIMotorStop(GIMBAL);
     }
 
     DMMotorSetRef(BIG_ROLL,6,BIG_ROLL_cmd_recv.angle);
@@ -158,29 +201,33 @@ void ARM_Task()
     DMMotorSetRef(SMALL_PITCH,5,SMALL_PITCH_cmd_recv.angle);
 
     DJIMotorSetRef(SMALL_ROLL,SMALL_ROLL_cmd_recv.speed);
+    DJIMotorSetRef(GIMBAL,GIMBAL_cmd_recv.angle);
 
-
+    //角度反馈
     BigPitch_feedback_data.now_angle = BIG_PITCH->measure.pos;
     YAW_feedback_data.now_angle = YAW->measure.pos;
     BIG_ROLL_feedback_data.now_angle = BIG_ROLL->measure.pos;
     SMALL_PITCH_feedback_data.now_angle = SMALL_PITCH->measure.pos;
     SMALL_ROLL_feedback_data.now_angle = SMALL_ROLL->measure.speed_aps;
-
+    GIMBAL_feedback_data.now_angle = GIMBAL->measure.total_angle;
+    //力矩反馈
     BigPitch_feedback_data.torque = BIG_PITCH->measure.tor;
     YAW_feedback_data.torque = YAW->measure.tor;
     BIG_ROLL_feedback_data.torque = BIG_ROLL->measure.tor;
     SMALL_PITCH_feedback_data.torque = SMALL_PITCH->measure.tor;
-
+    GIMBAL_feedback_data.current = GIMBAL->measure.real_current;
+    //速度反馈
     BigPitch_feedback_data.speed = BIG_PITCH->measure.vel;
     YAW_feedback_data.speed = YAW->measure.vel;
     BIG_ROLL_feedback_data.speed = BIG_ROLL->measure.vel;
     SMALL_PITCH_feedback_data.speed = SMALL_PITCH->measure.vel;
+    GIMBAL_feedback_data.speed = GIMBAL->measure.speed_aps;
 
     PubPushMessage(BIG_PITCH_pub, (void *)&BigPitch_feedback_data);
     PubPushMessage(YAW_pub, (void *)&YAW_feedback_data);
     PubPushMessage(BIG_ROLL_pub, (void *)&BIG_ROLL_feedback_data);
     PubPushMessage(SMALL_PITCH_pub, (void *)&SMALL_PITCH_feedback_data);
     PubPushMessage(SMALL_ROLL_pub, (void *)&SMALL_ROLL_feedback_data);
-
+    PubPushMessage(GIMBAL_pub, (void *)&GIMBAL_feedback_data);
 
 }

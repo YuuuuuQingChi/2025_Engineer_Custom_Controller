@@ -21,7 +21,7 @@
 #include "vision_line.h"
 #include "crc_ref.h"
 
-#define stretch_scale 3.502042
+#define stretch_scale 2.87495
 // 图传链路
 extern USARTInstance *vision_usart;
 
@@ -42,8 +42,8 @@ static float encoder_Data[4];
 //分析图传数据
 void JudgeVisionReadData(uint8_t* buff){
    // uint16_t judge_length; // 统计一帧数据长度
-	// if (buff == NULL)	   // 空数据包，则不作任何处理
-	// 	return;
+	if (buff == NULL)	   // 空数据包，则不作任何处理
+		return;
 
 	// 写入帧头数据(5-byte),用于判断是否开始存储裁判数据
 	memcpy(&referee_vision_info.FrameHeader, buff, LEN_HEADER);
