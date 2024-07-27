@@ -47,7 +47,7 @@ void Stretch_Init()
         },
         .motor_type = M3508};
     
-    stretch_config.can_init_config.tx_id                             =4;
+    stretch_config.can_init_config.tx_id                             =5;
     stretch_config.controller_setting_init_config.motor_reverse_flag = MOTOR_DIRECTION_NORMAL;
     left_motor                                                            = DJIMotorInit(&stretch_config);
 
@@ -84,6 +84,13 @@ void Stretch_Task()
     // 设置反馈数据,主要是imu和yaw的ecd
     stretch_feedback_data.now_left_angle  = left_motor->measure.total_angle;
     stretch_feedback_data.now_right_angle = right_motor->measure.total_angle;
+
+    stretch_feedback_data.now_left_current = left_motor->measure.real_current;
+    stretch_feedback_data.now_right_current = right_motor->measure.real_current;
+
+    stretch_feedback_data.now_left_speed = left_motor->measure.speed_aps;
+    stretch_feedback_data.now_right_speed = right_motor->measure.speed_aps;
+
 
     // 推送消息
     PubPushMessage(stretch_pub, (void *)&stretch_feedback_data);

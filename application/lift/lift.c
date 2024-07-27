@@ -77,6 +77,12 @@ void Lift_Task()
     lift_feedback_data.now_left_angle  = lift_left_motor->measure.total_angle;
     lift_feedback_data.now_right_angle = lift_right_motor->measure.total_angle;
 
+    lift_feedback_data.now_left_current = lift_left_motor->measure.real_current;
+    lift_feedback_data.now_right_current = lift_right_motor->measure.real_current;
+
+    lift_feedback_data.now_left_speed = lift_left_motor->measure.speed_aps;
+    lift_feedback_data.now_right_speed = lift_right_motor->measure.speed_aps;
+
     // 推送消息
     PubPushMessage(lift_pub, (void *)&lift_feedback_data);
 }

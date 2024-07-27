@@ -173,14 +173,10 @@ typedef struct
 //UI信息
 typedef struct
 { 
-    
-    int32_t auto_decide_flag ; 
-    int32_t auto_confirm_flag;
     int16_t flag_refresh_ui;
-    int16_t main_air_flag;//主气泵
-    int16_t mine_air_flag;//矿仓气泵
+   
 
-} ui_Cmd_s;
+} ui_Ctrl_Cmd_s;
 
 
 
@@ -188,9 +184,14 @@ typedef struct
 //升降回传信息
 typedef struct
 {
-    
     float now_left_angle;
     float now_right_angle;
+
+    float now_left_current;
+    float now_right_current;
+
+    float now_left_speed;
+    float now_right_speed;
 } Lift_Upload_Data_s;
 
 //伸出的上传信息
@@ -198,6 +199,12 @@ typedef struct
 { 
     float now_left_angle;
     float now_right_angle;
+
+    float now_left_current;
+    float now_right_current;
+
+    float now_left_speed;
+    float now_right_speed;
 
 }Stretch_Upload_Data_s; 
 
@@ -226,6 +233,8 @@ typedef struct
     float torque;
     float now_angle;
     float speed;
+
+    float temp;
 
 }BigPitch_Upload_Data_s;
 
@@ -286,4 +295,23 @@ typedef struct
     uint8_t lift;//升降的启停
 
 }Vision_Joint_Data_Upload_Data_s;
+
+
+
+typedef struct
+{ 
+   
+
+    int main_air_flag;//主气泵
+    int mine_air_flag;//矿仓气泵
+    int32_t big_pitch_temputure;//大pitch的温度
+    int Control_mode; //控制模式 0 是自定义控制器 1是自动模式 2是键鼠
+    int custom_connect;
+    int auto_type;//1中金 2左金 3右金 4自动抬金 5自动复位 6放肚子 7从肚子里面拿出来 8无矿乌龟 9手里有一个矿的乌龟 10 双矿乌龟
+    int chassis_speed;//0高速 1中速 2低速
+    int control_refresh;
+
+}UI_data_t;
+
+
 #endif // !ROBOT_DEF_H

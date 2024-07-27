@@ -12,16 +12,7 @@
 #include "string.h"
 #include "crc_ref.h"
 #include "stdio.h"
-
-
-// extern referee_info_t referee_info;                         // 裁判系统数据
-// extern Referee_Interactive_info_t Referee_Interactive_info; // 绘制UI所需的数据
-
-// uint8_t UI_Seq;                           // 包序号，供整个referee文件使用
-// static Graph_Data_t UI_Deriction_line[4]; // 射击准线
-// Graph_Data_t UI_Rectangle[10];     // 矩形
-// static Graph_Data_t UI_Circle_t[10];      // 圆形
-
+#include "rm_referee.h"
 
 // 包序号
 /********************************************删除操作*************************************
@@ -207,7 +198,7 @@ void UIOvalDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, 
 
 void UIArcDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, uint32_t Graph_Layer, uint32_t Graph_Color,
 			   uint32_t Graph_StartAngle, uint32_t Graph_EndAngle, uint32_t Graph_Width, uint32_t Start_x, uint32_t Start_y,
-			   uint32_t end_x, uint32_t end_y)
+			   uint32_t x_Length, uint32_t y_Length)
 {
 	int i;
 	for (i = 0; i < 3 && graphname[i] != '\0'; i++)
@@ -226,8 +217,8 @@ void UIArcDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, u
 	graph->start_x = Start_x;
 	graph->start_y = Start_y;
 	graph->radius = 0;
-	graph->end_x = end_x;
-	graph->end_y = end_y;
+	graph->end_x = x_Length;
+	graph->end_y = y_Length;
 }
 
 /************************************************绘制浮点型数据*************************************************
@@ -248,7 +239,6 @@ void UIArcDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, u
 void UIFloatDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, uint32_t Graph_Layer, uint32_t Graph_Color,
 				 uint32_t Graph_Size, uint32_t Graph_Digit, uint32_t Graph_Width, uint32_t Start_x, uint32_t Start_y, int32_t Graph_Float)
 {
-
 	int i;
 	for (i = 0; i < 3 && graphname[i] != '\0'; i++)
 	{
@@ -321,7 +311,7 @@ void UIIntDraw(Graph_Data_t *graph, char graphname[3], uint32_t Graph_Operate, u
 		此函数的实现和具体使用类似于printf函数
 **********************************************************************************************************/
 void UICharDraw(String_Data_t *graph, char graphname[3], uint32_t Graph_Operate, uint32_t Graph_Layer, uint32_t Graph_Color,
-				uint32_t Graph_Size, uint32_t Graph_Width, uint32_t Start_x, uint32_t Start_y, char *fmt, ...)
+				uint32_t Graph_Size, uint32_t Graph_Width, uint32_t Start_x, uint32_t Start_y,const char *fmt, ...)
 {
 	int i;
 	for (i = 0; i < 3 && graphname[i] != '\0'; i++)
@@ -342,10 +332,10 @@ void UICharDraw(String_Data_t *graph, char graphname[3], uint32_t Graph_Operate,
 	graph->Graph_Control.end_x = 0;
 	graph->Graph_Control.end_y = 0;
 
-	// va_list ap;
-	// va_start(ap, fmt);
-	// vsprintf((char *)graph->show_Data, fmt, ap); // 使用参数列表进行格式化并输出到字符串
-	// va_end(ap);
+	va_list ap;
+	va_start(ap, fmt);
+	vsprintf((char *)graph->show_Data, fmt, ap); // 使用参数列表进行格式化并输出到字符串
+	va_end(ap);
 	graph->Graph_Control.end_angle = strlen((const char *)graph->show_Data);
 }
 
@@ -364,7 +354,7 @@ void UIGraphRefresh(referee_id_t *_id, int cnt, ...)
 	static uint8_t buffer[512]; // 交互数据缓存
 
 	va_list ap;		   // 创建一个 va_list 类型变量
-	va_start(ap,cnt); // 初始化 va_list 变量为一个参数列表
+	va_start(ap, cnt); // 初始化 va_list 变量为一个参数列表
 
 	UI_GraphReFresh_data.FrameHeader.SOF = REFEREE_SOF;
 	UI_GraphReFresh_data.FrameHeader.DataLength = Interactive_Data_LEN_Head + cnt * UI_Operate_LEN_PerDraw;
@@ -407,6 +397,7 @@ void UIGraphRefresh(referee_id_t *_id, int cnt, ...)
 /************************************************UI推送字符（使更改生效）*********************************/
 void UICharRefresh(referee_id_t *_id, String_Data_t string_Data)
 {
+	if(_id == NULL)	return;
 	static UI_CharReFresh_t UI_CharReFresh_data;
 
 	uint8_t temp_datalength = Interactive_Data_LEN_Head + UI_Operate_LEN_DrawChar; // 计算交互数据长度

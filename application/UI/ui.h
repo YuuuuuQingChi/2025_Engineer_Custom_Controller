@@ -1,13 +1,12 @@
-#ifndef B00DB2C6_F650_4EFF_9C25_F09694ECEDAD
-#define B00DB2C6_F650_4EFF_9C25_F09694ECEDAD
-#ifndef UI_H_
-#define UI_H_
+#ifndef UI_H
+#define UI_H
 
-void DeterminRobotID();
+#include "referee_UI.h"
 
-void My_UIGraphInit();
-void uiInit();
-void uiTask();
+
+
+extern void get_referee_data(referee_info_t *referee_data);
+extern void MyUIRefresh(void);
+extern void MyUIInit(void);
+
 #endif
-
-#endif /* B00DB2C6_F650_4EFF_9C25_F09694ECEDAD */

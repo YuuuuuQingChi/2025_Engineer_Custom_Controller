@@ -50,6 +50,8 @@ typedef struct
 
     float lift_left;
     float lift_right;
+
+    float gimbal;
     
 }initial;//便于统计最初的必要关节角度角度;
 
@@ -82,6 +84,20 @@ typedef struct
     int8_t step9;
     int8_t step10;
 
-}auto_mode;
+    int8_t now_step;
+
+}auto_mode_step;
+
+typedef struct
+{
+    //类型
+    int8_t type;
+
+    //自动复位解除限制
+    int8_t auto_reset_flag;
+
+    //自动模式启停
+
+}auto_mode_Assistant;
 
 #endif // !ROBOT_CMD_H

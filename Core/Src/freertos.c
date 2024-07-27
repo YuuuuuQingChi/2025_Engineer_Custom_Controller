@@ -54,13 +54,6 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityHigh,
 };
-/* Definitions for Buzzer */
-osThreadId_t BuzzerHandle;
-const osThreadAttr_t Buzzer_attributes = {
-  .name = "Buzzer",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
 /* Definitions for Daemon */
 osThreadId_t DaemonHandle;
 const osThreadAttr_t Daemon_attributes = {
@@ -72,7 +65,7 @@ const osThreadAttr_t Daemon_attributes = {
 osThreadId_t robottaskHandle;
 const osThreadAttr_t robottask_attributes = {
   .name = "robottask",
-  .stack_size = 2048 * 4,
+  .stack_size = 4096 * 4,
   .priority = (osPriority_t) osPriorityNormal1,
 };
 /* Definitions for startmotor */
@@ -82,6 +75,13 @@ const osThreadAttr_t startmotor_attributes = {
   .stack_size = 2048 * 4,
   .priority = (osPriority_t) osPriorityNormal1,
 };
+/* Definitions for myTask06 */
+osThreadId_t myTask06Handle;
+const osThreadAttr_t myTask06_attributes = {
+  .name = "myTask06",
+  .stack_size = 1028 * 4,
+  .priority = (osPriority_t) osPriorityAboveNormal1,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -89,10 +89,10 @@ const osThreadAttr_t startmotor_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void INIT(void *argument);
-void BuzzerTask(void *argument);
 void DaemonTask(void *argument);
 void StartROBOTTASK(void *argument);
 void StartMOTORTASK(void *argument);
+void UI_TASK(void *argument);
 
 extern void MX_USB_DEVICE_Init(void);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
@@ -127,9 +127,6 @@ void MX_FREERTOS_Init(void) {
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(INIT, NULL, &defaultTask_attributes);
 
-  /* creation of Buzzer */
-  BuzzerHandle = osThreadNew(BuzzerTask, NULL, &Buzzer_attributes);
-
   /* creation of Daemon */
   DaemonHandle = osThreadNew(DaemonTask, NULL, &Daemon_attributes);
 
@@ -138,6 +135,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of startmotor */
   startmotorHandle = osThreadNew(StartMOTORTASK, NULL, &startmotor_attributes);
+
+  /* creation of myTask06 */
+  myTask06Handle = osThreadNew(UI_TASK, NULL, &myTask06_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -167,24 +167,6 @@ __weak void INIT(void *argument)
     osDelay(1);
   }
   /* USER CODE END INIT */
-}
-
-/* USER CODE BEGIN Header_BuzzerTask */
-/**
-* @brief Function implementing the Buzzer thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_BuzzerTask */
-__weak void BuzzerTask(void *argument)
-{
-  /* USER CODE BEGIN BuzzerTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END BuzzerTask */
 }
 
 /* USER CODE BEGIN Header_DaemonTask */
@@ -239,6 +221,24 @@ __weak void StartMOTORTASK(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartMOTORTASK */
+}
+
+/* USER CODE BEGIN Header_UI_TASK */
+/**
+* @brief Function implementing the myTask06 thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_UI_TASK */
+__weak void UI_TASK(void *argument)
+{
+  /* USER CODE BEGIN UI_TASK */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END UI_TASK */
 }
 
 /* Private application code --------------------------------------------------*/

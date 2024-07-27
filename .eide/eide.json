@@ -122,7 +122,8 @@
           "modules/motor/DMmotor",
           "application/stretch",
           "application/arm",
-          "application/vision"
+          "application/vision",
+          "application/ui"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",

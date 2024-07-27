@@ -223,6 +223,8 @@ void ARM_Task()
     SMALL_PITCH_feedback_data.speed = SMALL_PITCH->measure.vel;
     GIMBAL_feedback_data.speed = GIMBAL->measure.speed_aps;
 
+    BigPitch_feedback_data.temp = BIG_PITCH->measure.Tcoil;
+
     PubPushMessage(BIG_PITCH_pub, (void *)&BigPitch_feedback_data);
     PubPushMessage(YAW_pub, (void *)&YAW_feedback_data);
     PubPushMessage(BIG_ROLL_pub, (void *)&BIG_ROLL_feedback_data);

@@ -22,7 +22,7 @@
 
 static USARTInstance *referee_usart_instance; // 裁判系统串口实例
 static DaemonInstance *referee_daemon;		  // 裁判系统守护进程
-referee_info_t referee_info;			  // 裁判系统数据
+static referee_info_t referee_info;			  // 裁判系统数据
 
 /**
  * @brief  读取裁判数据,中断中读取保证速度
@@ -123,6 +123,8 @@ static void RefereeLostCallback(void *arg)
 referee_info_t *RefereeInit(UART_HandleTypeDef *referee_usart_handle)
 {
 	USART_Init_Config_s conf;
+    memset(&conf, 0, sizeof(USART_Init_Config_s));
+
 	conf.module_callback = RefereeRxCallback;
 	conf.usart_handle = referee_usart_handle;
 	conf.recv_buff_size = RE_RX_BUFFER_SIZE; // mx 255(u8)
@@ -145,5 +147,5 @@ referee_info_t *RefereeInit(UART_HandleTypeDef *referee_usart_handle)
 void RefereeSend(uint8_t *send, uint16_t tx_len)
 {
 	USARTSend(referee_usart_instance, send, tx_len, USART_TRANSFER_DMA);
-	osDelay(115);
+	osDelay(35);
 }
