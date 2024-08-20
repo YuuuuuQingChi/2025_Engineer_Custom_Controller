@@ -10,4 +10,6 @@ void Vision_Int();
 
 void Vision_Task();
 
+extern RC_ctrl_t *vision_rc_data;
+
 #endif // !_VISION_LINE_H

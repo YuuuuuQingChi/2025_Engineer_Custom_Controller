@@ -20,10 +20,15 @@
 #include "rm_referee.h"
 #include "vision_line.h"
 #include "crc_ref.h"
+#include "remote_control.h"
+#include "referee_protocol.h"
+#include "bsp_usart.h"
+#include "crc_ref.h"
 
 #define stretch_scale 2.87495
 // 图传链路
 extern USARTInstance *vision_usart;
+int vision_connection_state = 0;
 
 static Publisher_t *vision_joint_data_pub;
 static Subscriber_t *vision_joint_data_sub;
@@ -39,6 +44,27 @@ static uint8_t lift_data;
 static uint8_t air_pump;
 static float stretch;
 static float encoder_Data[4];
+// 图传控制数据
+RC_ctrl_t *vision_rc_data;
+//图传数据解析为控制数据
+void vision_to_rc(const uint8_t *rec_buf){
+    // 鼠标解析
+    vision_rc_data->mouse.x = (rec_buf[0] | (rec_buf[1] << 8)); //!< Mouse X axis
+    vision_rc_data->mouse.y = (rec_buf[2] | (rec_buf[3] << 8)); //!< Mouse Y axis
+    vision_rc_data->mouse.press_l = rec_buf[6];                 //!< Mouse Left Is Press ?
+    vision_rc_data->mouse.press_r = rec_buf[7];                 //!< Mouse Right Is Press ?
+
+    //  位域的按键值解算,直接memcpy即可,注意小端低字节在前,即lsb在第一位,msb在最后
+    *(uint16_t *)&vision_rc_data->key[KEY_PRESS] = (uint16_t)(rec_buf[8] | (rec_buf[9] << 8));
+    if (vision_rc_data->key[KEY_PRESS].ctrl) // ctrl键按下
+        vision_rc_data->key[KEY_PRESS_WITH_CTRL] = vision_rc_data->key[KEY_PRESS];
+    else
+        memset(&vision_rc_data->key[KEY_PRESS_WITH_CTRL], 0, sizeof(Key_t));
+    if (vision_rc_data->key[KEY_PRESS].shift) // shift键按下
+        vision_rc_data->key[KEY_PRESS_WITH_SHIFT] = vision_rc_data->key[KEY_PRESS];
+    else
+        memset(&vision_rc_data->key[KEY_PRESS_WITH_SHIFT], 0, sizeof(Key_t));
+}
 //分析图传数据
 void JudgeVisionReadData(uint8_t* buff){
    // uint16_t judge_length; // 统计一帧数据长度
@@ -75,7 +101,10 @@ void JudgeVisionReadData(uint8_t* buff){
 						memcpy((uint8_t*)&air_pump,(uint8_t*)vision_recv_data+24,1);//气泵的的标志
 
 					    break;
-					
+					case 0x0304://键鼠遥控数据
+						vision_to_rc(buff + DATA_Offset);
+						vision_connection_state = 1;
+						break;
                     default:
                         break;
                 }

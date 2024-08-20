@@ -7,20 +7,12 @@
 #include "motor_def.h"
 #include "daemon.h"
 
-#define DM_MOTOR_MX_CNT 14 // 最多允许4个DM电机使用多电机指令,挂载在一条总线上
+#define DM_MOTOR_MX_CNT 9 
 
-//以下是DM4310的参数，用其他电机需要更改下面参数
-#define P_MIN -12.5f
-#define P_MAX 12.5f
-#define V_MIN -30.0f
-#define V_MAX 30.0f
-#define KP_MIN 0.0f
-#define KP_MAX 500.0f
-#define KD_MIN 0.0f
-#define KD_MAX 5.0f
-#define T_MIN -10.0f
-#define T_MAX 10.0f
-
+#define KP_MIN 0
+#define KP_MAX 500
+#define KD_MIN 0
+#define KD_MAX 5
 // 电机回传信息结构体
 typedef struct 
 {
@@ -29,17 +21,21 @@ typedef struct
 	int p_int;
 	int v_int;
 	int t_int;
-
-	float pos;
+	float pos;//弧度制
 	float vel;
 	float tor;
-
 	float Tmos;
 	float Tcoil;
-
     uint32_t feed_cnt;
     float dt;
 }DMMotor_Measure_t;
+//电机控制模式选择
+typedef enum
+{
+    MIT = 3,
+    PVCtrl,
+    VCtrl,
+}DMMotor_Control_Mode_e;
 
 typedef struct
 {
@@ -54,20 +50,23 @@ typedef struct
     PIDInstance current_PID;
     PIDInstance speed_PID;
     PIDInstance angle_PID;
-    float v_ref;
-    float p_ref;
+
+    DMMotor_Control_Mode_e DMMotor_Control_Mode;//达妙电机控制模式，分为MIT||位置速度||速度
+    float PMAX,VMAX,TMAX;//分别是位置，速度，扭矩的最大值设定，不同dm电机的类型，需要不同的值
+    float v_ref;//目标速度/最大速度限制/随模式选择而变
+    float p_ref;//目标位置
+    float t_ref;//目标扭矩/最大扭矩限制/随模式选择而变
+    float KP,KD,t_ref;// 位置环P，位置环D,扭矩给定值
 
     Motor_Working_Type_e stop_flag; // 启停标志
-
     CANInstance *motor_can_ins;
-
     DaemonInstance *daemon;
- 
     Motor_Type_e motor_type;        // 电机类型
+
 } DMMotorInstance;
 
 /**
- * @brief 初始化DR电机
+ * @brief 初始化DM电机
  *
  * @param config 电机配置
  * @return DRMotorInstance* 返回实例指针
@@ -82,7 +81,7 @@ DMMotorInstance *DMMotorInit(Motor_Init_Config_s *config);
  * @param ref 设定值
  */
 
-void DMMotorSetRef(DMMotorInstance *motor, float vref , float pref);
+void DMMotor_PV_SetRef(DMMotorInstance *motor, float vref , float pref);
 
 /**
  * @brief 为所有DM电机计算pid/反转/模式控制,并通过bspcan发送电流值(发送CAN报文)

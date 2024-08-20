@@ -86,7 +86,7 @@ typedef struct
                                 This parameter can be a combination of @ref FLASHEx_OB_USER_Type */
 
   uint32_t USERConfig;     /*!< Program the FLASH User Option Byte: IWDG_SW / RST_STOP / RST_STDBY /
-                                IWDG_FREEZE_STOP / IWDG_FREEZE_SANDBY / IO_HSLV / SWAP_BANK_OPT */
+                                IWDG_FREEZE_STOP / _FREEZE_SANDBY / IO_HSLV / SWAP_BANK_OPT */
 
   uint32_t Banks;          /*!< Select banks for WRP , PCROP and secure area config .
                                 This parameter must be a value of @ref FLASHEx_Banks */

@@ -110,7 +110,7 @@ typedef enum
     LK_MS5005,
     DR_PDA04,
     DR_B0X,
-    DM4310 = 2,
+    DM4310,
     DM6006,
     DM8006,
 } Motor_Type_e;

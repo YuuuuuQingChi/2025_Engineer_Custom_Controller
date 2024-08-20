@@ -138,7 +138,7 @@ static void UI_operate()
         UI_StringSwitchDetect_Char(string_custom, 2, UI_data_recv.Control_mode,"YES","NONE");
         UI_ColorSwitchDetect_Char(string_custom, 2, UI_data_recv.Control_mode,Graphic_Color_Pink,Graphic_Color_White);
         //自动模式的种类
-        UI_StringSwitchDetect_Char(string_auto, 11, UI_data_recv.auto_type,"NONE","MID_GOLD","LEFT_GOLD","RIGHT_GOLD","PULL_GOLD","RESET","RECEIVE_MINE","GIVE_MINE","NO_TURTLE","ONE_TURTLE","DOUBLE_TURTLE");
+        UI_StringSwitchDetect_Char(string_auto, 18, UI_data_recv.auto_type,"NONE","MID_GOLD","LEFT_GOLD","RIGHT_GOLD","PULL_GOLD","RESET","RECEIVE_MINE","GIVE_MINE","NO_TURTLE","ONE_TURTLE","DOUBLE_TURTLE","MID_GOLD","LEFT_GOLD","RIGHT_GOLD","GROUND","PULL_GROUND","SILVER","PULL_SILVER");
         UI_ColorSwitchDetect_Char(string_auto, 2, UI_data_recv.Control_mode,Graphic_Color_White,Graphic_Color_Pink);
         //大pitch的温度
         number_big_pitch_temp->param.Number.value = UI_data_recv.big_pitch_temputure;
@@ -159,12 +159,12 @@ void MyUIRefresh(void)
     
     if(UI_data_recv.control_refresh == 1)
     {
-        UIDelete(&referee_data->referee_id, 0, 0);
+        UI_Graph_Refresh();
         UI_String_Refresh();
         
     }
-    UI_String_Refresh();
-    UI_Graph_Refresh();
+    UI_String_Update();
+    UI_Graph_Update();
 }
 
 void UI_TASK(void *argument)

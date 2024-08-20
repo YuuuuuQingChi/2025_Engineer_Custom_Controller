@@ -82,8 +82,8 @@ static GIMBAL_Ctrl_Cmd_s GIMBAL_Data_cmd_send;
 
 static initial initial_angle;
 static chassis_speed chassis_speed_scale; //2是慢速 3是中速 4是高速;
-static auto_mode_step gold_auto[3] , silver_auto , pull_gold ,  auto_reset , receive_mine , pull_inter_mine ,turtle[3];
-static auto_mode_Assistant auto_Assistant;//type: 11是停止（且默认为11） 2是左金,3是中金,4是右金,5是银矿,6是自动抬金矿，7是自动复位 , 8是放回肚子 ， 9是从肚子拿出来
+static auto_mode_step gold_auto[3] , silver_auto[2] , pull_gold ,  auto_reset , receive_mine , pull_inter_mine ,turtle[3] , twice_gold[3] , ground_mine[2];
+static auto_mode_Assistant auto_Assistant;//type: 11是停止（且默认为11） 2是左金,3是中金,4是右金,5是银矿,6是自动抬金矿，7是自动复位 , 8是放回肚子 ， 9是从肚子拿出来 , 10 11 12 是乌龟模式 13 14 15左中右二金 16取地 17拿起来 18 19银
 static mode_direction mode;//2是自定义控制器。3是自动 。4是键鼠
 
 extern int mouse_count_r;
@@ -251,7 +251,7 @@ void cmd_value_limit()
     SMALL_PITCH_cmd_send.angle = Limit_Set(SMALL_PITCH_cmd_send.angle,1.91825008,-2.03803349);
 
     VAL_LIMIT(servo_cmd_send.yaw_angle,50,130);
-    VAL_LIMIT(servo_cmd_send.pitch_angle,100,170);
+    VAL_LIMIT(servo_cmd_send.pitch_angle,100,150);
 
 }
 
@@ -275,12 +275,12 @@ void Stall_Detection()
             big_pitch_stall_flag = 2;
 
         }
-        else if ((BigPitch_fetch_data.torque > 12 || BigPitch_fetch_data.torque < - 12))
-        {
-            direction = BigPitch_cmd_send.angle - BigPitch_fetch_data.now_angle;//方向得知
-            big_pitch_stall_flag = 2;
+        // else if ((BigPitch_fetch_data.torque > 12 || BigPitch_fetch_data.torque < - 12))
+        // {
+        //     direction = BigPitch_cmd_send.angle - BigPitch_fetch_data.now_angle;//方向得知
+        //     big_pitch_stall_flag = 2;
 
-        }
+        // }
         else
         {
             big_pitch_stall_flag = 3;
@@ -373,9 +373,9 @@ static void RemoteControlSet()
 {
     // 左侧开关状态[上],右侧开关状态[上]
     if ((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_up(rc_data[TEMP].rc.switch_left)) {
-        chassis_cmd_send.vx = rc_data[TEMP].rc.rocker_l_ * 25;
-        chassis_cmd_send.vy = rc_data[TEMP].rc.rocker_l1 * 16;
-        chassis_cmd_send.wz = rc_data[TEMP].rc.rocker_r_ * 8;
+        chassis_cmd_send.vx = rc_data[TEMP].rc.rocker_l_ * 85;
+        chassis_cmd_send.vy = rc_data[TEMP].rc.rocker_l1 * 52;
+        chassis_cmd_send.wz = rc_data[TEMP].rc.rocker_r_ * 22;
 
         if (is_range(rc_data[TEMP].rc.rocker_r1)) {
             lift_cmd_send.left_angle = rc_data[TEMP].rc.rocker_r1 / 10.0 + lift_fetch_data.now_left_angle;
@@ -489,24 +489,24 @@ static void Chassis_MouseKeySet()
 
     if (chassis_speed_scale.speed_change_flag == 2)
     {
-        chassis_speed_scale.KW = 5.5;
-        chassis_speed_scale.KX = 5.5;
-        chassis_speed_scale.KY = 5.5;    
+        chassis_speed_scale.KW = 10.5;
+        chassis_speed_scale.KX = 15.5;
+        chassis_speed_scale.KY = 15.5;    
 
         ui_cmd_send.chassis_speed = 2;
     }
     else if(chassis_speed_scale.speed_change_flag == 3)
     {
-        chassis_speed_scale.KW = 7;
-        chassis_speed_scale.KX = 14;
-        chassis_speed_scale.KY = 10;
+        chassis_speed_scale.KW = 14;
+        chassis_speed_scale.KX = 32;
+        chassis_speed_scale.KY = 28;
         ui_cmd_send.chassis_speed = 1;
     }
     else if(chassis_speed_scale.speed_change_flag == 4)
     {
-        chassis_speed_scale.KW = 12;
-        chassis_speed_scale.KX = 32;
-        chassis_speed_scale.KY = 20;
+        chassis_speed_scale.KW = 18;
+        chassis_speed_scale.KX = 60;
+        chassis_speed_scale.KY = 48;
         ui_cmd_send.chassis_speed = 0;
     }
   
@@ -515,13 +515,13 @@ static void Chassis_MouseKeySet()
     } 
     else {
         ramp_init(&chassis_vy_ramp, 600);
-        if(chassis_cmd_send.vy > 60)
+        if(chassis_cmd_send.vy > 200)
         {
-            chassis_cmd_send.vy -= 60;
+            chassis_cmd_send.vy -= 200;
         }
-        else if(chassis_cmd_send.vy < -60)
+        else if(chassis_cmd_send.vy < -200)
         {
-            chassis_cmd_send.vy += 60;
+            chassis_cmd_send.vy += 200;
         }
         else{
             chassis_cmd_send.vy = 0;
@@ -531,13 +531,13 @@ static void Chassis_MouseKeySet()
         chassis_cmd_send.vx = (rc_data[TEMP].key[KEY_PRESS].d * 660 * chassis_speed_scale.KY - rc_data[TEMP].key[KEY_PRESS].a * 660 * chassis_speed_scale.KY) * ramp_calc(&chassis_vx_ramp);
     } else {
         ramp_init(&chassis_vx_ramp, 700);
-        if(chassis_cmd_send.vx > 80)
+        if(chassis_cmd_send.vx > 200)
         {
-            chassis_cmd_send.vx -= 80;
+            chassis_cmd_send.vx -= 200;
         }
-        else if(chassis_cmd_send.vx < -80)
+        else if(chassis_cmd_send.vx < -200)
         {
-            chassis_cmd_send.vx += 80;
+            chassis_cmd_send.vx += 200;
         }
         else
         {
@@ -593,7 +593,7 @@ void air_controll()
              ui_cmd_send.main_air_flag = 2;
          }
     }
-    if(!((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)))
+    if(!((switch_is_up(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left)))//过检录罢了
     {
         if(rc_data[TEMP].rc.dial > 250){
             ui_cmd_send.main_air_flag = 1;
@@ -602,8 +602,15 @@ void air_controll()
         {
             ui_cmd_send.main_air_flag = 2;
         }
+        if((switch_is_mid(rc_data[TEMP].rc.switch_right)) && switch_is_mid(rc_data[TEMP].rc.switch_left))
+        {
+            ui_cmd_send.mine_air_flag = 1;
+        }
+        else{
+            ui_cmd_send.mine_air_flag = 2;
+        }
     }
-    else
+    else//键鼠 || 自定义控制器 || 自动模式 || 侧轮刷新UI
     {
          if(abs(rc_data[TEMP].rc.dial) > 250){
             ui_cmd_send.control_refresh = 1;
@@ -612,10 +619,6 @@ void air_controll()
         }
         
     }
-
-        
-    
-
     if(rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].v)
     {
         ui_cmd_send.mine_air_flag = 1;
@@ -624,6 +627,7 @@ void air_controll()
     {
         ui_cmd_send.mine_air_flag = 2;
     }
+
    
     if (!((switch_is_down(rc_data[TEMP].rc.switch_right)) && switch_is_down(rc_data[TEMP].rc.switch_left))) {
         // 大气泵
@@ -805,14 +809,14 @@ static void General_Control()
     //ctrl加w  s控制图传升降
     if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].w)
     {
-        GIMBAL_Data_cmd_send.angle = GIMBAL_fetch_data.now_angle - 400 * ramp_calc(&GIMBAL_ramp);
+        GIMBAL_Data_cmd_send.angle = GIMBAL_fetch_data.now_angle - 1200 * ramp_calc(&GIMBAL_ramp);
     }
     else if (rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].s)
     {
-        GIMBAL_Data_cmd_send.angle = GIMBAL_fetch_data.now_angle + 400 * ramp_calc(&GIMBAL_ramp);
+        GIMBAL_Data_cmd_send.angle = GIMBAL_fetch_data.now_angle + 1200 * ramp_calc(&GIMBAL_ramp);
     }
     else{
-        ramp_init(&GIMBAL_ramp, 1200);
+        ramp_init(&GIMBAL_ramp, 800);
     }
     if(rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].a)
     {
@@ -824,11 +828,11 @@ static void General_Control()
     }
     if(rc_data[TEMP].mouse.x > 1)
     {
-        servo_cmd_send.pitch_angle += 0.04;
+        servo_cmd_send.pitch_angle += 0.06;
     }
     else if (rc_data[TEMP].mouse.x < -1)
     {
-        servo_cmd_send.pitch_angle -= 0.04;
+        servo_cmd_send.pitch_angle -= 0.06;
     }
     // if(rc_data[TEMP].mouse.y > 2)
     // {
@@ -958,7 +962,6 @@ static void Automatic_mode_Decide()
         ui_cmd_send.auto_type = 4;
     
     }
-    //if(rc_data[TEMP].key[KEY_PRESS].x)        auto_Assistant.type =5;
     if(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL].r )//自动复位
     {
         auto_Assistant.type = 7;
@@ -1062,9 +1065,112 @@ static void Automatic_mode_Decide()
         turtle[2].step10 = 0;
         ui_cmd_send.auto_type = 10;
     }
-    
+    if(rc_data[TEMP].key[KEY_PRESS].x)        
+    {
+        auto_Assistant.type = 14;
+        twice_gold[0].step1 = 1;
+        twice_gold[0].step2 = 0;
+        twice_gold[0].step3 = 0;
+        twice_gold[0].step4 = 0;
+        twice_gold[0].step5 = 0;
+        twice_gold[0].step6 = 0;
+        twice_gold[0].step7 = 0;
+        twice_gold[0].step8 = 0;
+        twice_gold[0].step9 = 0;
+        twice_gold[0].step10 = 0;
+        ui_cmd_send.auto_type = 11;
+    }   
+    if(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].x)        
+    {
+        auto_Assistant.type = 13;
+        twice_gold[1].step1 = 1;
+        twice_gold[1].step2 = 0;
+        twice_gold[1].step3 = 0;
+        twice_gold[1].step4 = 0;
+        twice_gold[1].step5 = 0;
+        twice_gold[1].step6 = 0;
+        twice_gold[1].step7 = 0;
+        twice_gold[1].step8 = 0;
+        twice_gold[1].step9 = 0;
+        twice_gold[1].step10 = 0;
+        ui_cmd_send.auto_type = 12;
+    }
+    if(rc_data[TEMP].key[KEY_PRESS_WITH_CTRL].x)        
+    {
+        auto_Assistant.type = 15;
+        twice_gold[2].step1 = 1;
+        twice_gold[2].step2 = 0;
+        twice_gold[2].step3 = 0;
+        twice_gold[2].step4 = 0;
+        twice_gold[2].step5 = 0;
+        twice_gold[2].step6 = 0;
+        twice_gold[2].step7 = 0;
+        twice_gold[2].step8 = 0;
+        twice_gold[2].step9 = 0;
+        twice_gold[2].step10 = 0;
+        ui_cmd_send.auto_type = 13;
+    }      
+    if(rc_data[TEMP].key[KEY_PRESS].b)
+    {
+        auto_Assistant.type = 16;
+        ground_mine[0].step1 = 1;
+        ground_mine[0].step2 = 0;
+        ground_mine[0].step3 = 0;
+        ground_mine[0].step4 = 0;
+        ground_mine[0].step5 = 0;
+        ground_mine[0].step6 = 0;
+        ground_mine[0].step7 = 0;
+        ground_mine[0].step8 = 0;
+        ground_mine[0].step9 = 0;
+        ground_mine[0].step10 = 0;
+        ui_cmd_send.auto_type = 14;
+    }
+    if(rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT].b)
+    {
+        auto_Assistant.type = 17;
+        ground_mine[1].step1 = 1;
+        ground_mine[1].step2 = 0;
+        ground_mine[1].step3 = 0;
+        ground_mine[1].step4 = 0;
+        ground_mine[1].step5 = 0;
+        ground_mine[1].step6 = 0;
+        ground_mine[1].step7 = 0;
+        ground_mine[1].step8 = 0;
+        ground_mine[1].step9 = 0;
+        ground_mine[1].step10 = 0;
+        ui_cmd_send.auto_type = 15;
+    }
+    if(Vision_Joint_Data_fetch_data.lift == 2 || rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL].q )
+    {
+        auto_Assistant.type = 18;
+        silver_auto[0].step1 = 1;
+        silver_auto[0].step2 = 0;
+        silver_auto[0].step3 = 0;
+        silver_auto[0].step4 = 0;
+        silver_auto[0].step5 = 0;
+        silver_auto[0].step6 = 0;
+        silver_auto[0].step7 = 0;
+        silver_auto[0].step8 = 0;
+        silver_auto[0].step9 = 0;
+        silver_auto[0].step10 = 0;
+        ui_cmd_send.auto_type = 16;
+    }
+    if(Vision_Joint_Data_fetch_data.lift == 3 || rc_data[TEMP].key[KEY_PRESS_WITH_SHIFT_AND_CTRL].e)
+    {
+        auto_Assistant.type = 19;
+        silver_auto[1].step1 = 1;
+        silver_auto[1].step2 = 0;
+        silver_auto[1].step3 = 0;
+        silver_auto[1].step4 = 0;
+        silver_auto[1].step5 = 0;
+        silver_auto[1].step6 = 0;
+        silver_auto[1].step7 = 0;
+        silver_auto[1].step8 = 0;
+        silver_auto[1].step9 = 0;
+        silver_auto[1].step10 = 0;
+        ui_cmd_send.auto_type = 17;
+    }
 }
-
 /**
  * @brief 一键左金矿
  * 
@@ -1115,9 +1221,10 @@ static void Auto_gold()
         stretch_cmd_send.right_angle  = Automatic_mode_target_setting(6232.36719,stretch_fetch_data.now_right_angle,200);
         lift_cmd_send.left_angle = Automatic_mode_target_setting(-14344.8691,lift_fetch_data.now_left_angle,150);
         lift_cmd_send.right_angle = Automatic_mode_target_setting(13964.3887,lift_fetch_data.now_right_angle,150);
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(255,GIMBAL_fetch_data.now_angle, 500);
         chassis_speed_scale.speed_change_flag = 3;
         ui_cmd_send.main_air_flag = 1;
-        if (lift_fetch_data.now_left_angle < -14344.8691 + 200 && lift_fetch_data.now_left_angle > -14344.8691 - 200 && stretch_fetch_data.now_left_angle > 6232.36719 - 350 && stretch_fetch_data.now_left_angle < 6232.36719 + 350)
+        if (lift_fetch_data.now_left_angle < -14344.8691 + 200 && lift_fetch_data.now_left_angle > -14344.8691 - 200 && stretch_fetch_data.now_left_angle > 6232.36719 - 350 && stretch_fetch_data.now_left_angle < 6232.36719 + 350 && GIMBAL_fetch_data.now_angle < 255 + 150 && GIMBAL_fetch_data.now_angle > 255 - 150)
         {
             gold_auto[0].step4 = 1;
             gold_auto[0].now_step = 4;
@@ -1174,9 +1281,10 @@ static void Auto_gold()
         stretch_cmd_send.right_angle  = Automatic_mode_target_setting(7444.86133,stretch_fetch_data.now_right_angle,200);
         lift_cmd_send.left_angle = Automatic_mode_target_setting(-14344.8691,lift_fetch_data.now_left_angle,150);
         lift_cmd_send.right_angle = Automatic_mode_target_setting(13964.3887,lift_fetch_data.now_right_angle,150);
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(255,GIMBAL_fetch_data.now_angle, 500);
         chassis_speed_scale.speed_change_flag = 3;
         ui_cmd_send.main_air_flag = 1;
-        if (lift_fetch_data.now_left_angle < -14344.8691 + 200 && lift_fetch_data.now_left_angle > 14344.8691 - 200 && stretch_fetch_data.now_left_angle > -7529.23828 - 350 && stretch_fetch_data.now_left_angle < -7529.23828 + 350)
+        if (lift_fetch_data.now_left_angle < -14344.8691 + 200 && lift_fetch_data.now_left_angle > 14344.8691 - 200 && stretch_fetch_data.now_left_angle > -7529.23828 - 350 && stretch_fetch_data.now_left_angle < -7529.23828 + 350 && GIMBAL_fetch_data.now_angle < 255 + 150 && GIMBAL_fetch_data.now_angle > 255 - 150)
         {
             gold_auto[1].step4 = 1;
             gold_auto[1].now_step = 4;
@@ -1236,9 +1344,10 @@ static void Auto_gold()
         stretch_cmd_send.right_angle  = Automatic_mode_target_setting(7743.68994,stretch_fetch_data.now_right_angle,200);
         lift_cmd_send.left_angle = Automatic_mode_target_setting(-14344.8691,lift_fetch_data.now_left_angle,150);
         lift_cmd_send.right_angle = Automatic_mode_target_setting(13964.3887,lift_fetch_data.now_right_angle,150);
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(255,GIMBAL_fetch_data.now_angle, 500);
         chassis_speed_scale.speed_change_flag = 3;
         ui_cmd_send.main_air_flag = 1;
-        if (lift_fetch_data.now_left_angle < -14344.8691 + 200 && lift_fetch_data.now_left_angle > 14344.8691 - 200 && stretch_fetch_data.now_left_angle > -7708.84424 - 350 && stretch_fetch_data.now_left_angle < -7708.84424 + 350)
+        if (lift_fetch_data.now_left_angle < -14344.8691 + 200 && lift_fetch_data.now_left_angle > 14344.8691 - 200 && stretch_fetch_data.now_left_angle > -7708.84424 - 350 && stretch_fetch_data.now_left_angle < -7708.84424 + 350  && GIMBAL_fetch_data.now_angle < 255 + 150 && GIMBAL_fetch_data.now_angle > 255 - 150)
         {
             gold_auto[2].step4 = 1;
             gold_auto[2].now_step = 4;
@@ -1329,7 +1438,7 @@ static void Auto_Sliver()
 
         GIMBAL_Data_cmd_send.angle = GIMBAL_fetch_data.now_angle + 500;
 
-        if((stretch_fetch_data.now_left_current > 2200 || stretch_fetch_data.now_left_current < -2200) && stretch_fetch_data.now_left_speed < 3 && stretch_fetch_data.now_left_speed > -3 && (lift_fetch_data.now_left_current > 2200 || lift_fetch_data.now_left_current < -2200) && lift_fetch_data.now_left_speed < 3 && lift_fetch_data.now_left_speed > -3 && ((GIMBAL_fetch_data.current > 3700 || GIMBAL_fetch_data.current < - 3700) && (GIMBAL_fetch_data.speed < 2 || GIMBAL_fetch_data.speed > -2)))
+        if((stretch_fetch_data.now_left_current > 4200 || stretch_fetch_data.now_left_current < -4200) && stretch_fetch_data.now_left_speed < 3 && stretch_fetch_data.now_left_speed > -3 && (lift_fetch_data.now_left_current > 4200 || lift_fetch_data.now_left_current < -4200) && lift_fetch_data.now_left_speed < 3 && lift_fetch_data.now_left_speed > -3 && ((GIMBAL_fetch_data.current > 3700 || GIMBAL_fetch_data.current < - 3700) && (GIMBAL_fetch_data.speed < 2 || GIMBAL_fetch_data.speed > -2)))
         {
             auto_reset.step2 = 1;
             auto_reset.now_step = 2;
@@ -1416,6 +1525,8 @@ static void Auto_Receive()
         lift_cmd_send.left_angle = Automatic_mode_target_setting(-3842.17468 ,lift_fetch_data.now_left_angle,350);
         lift_cmd_send.right_angle = Automatic_mode_target_setting(3870.0332 ,lift_fetch_data.now_right_angle,350);
         GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-8262.33398,GIMBAL_fetch_data.now_angle, 500);
+        //新加的
+        SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(1.57072544,SMALL_PITCH_fetch_data.now_angle,0.5);
         if(((lift_fetch_data.now_left_angle < -3842.17468 + 100 && lift_fetch_data.now_left_angle > -3842.17468 - 100)||((lift_fetch_data.now_left_current > 2200 || lift_fetch_data.now_left_current < -2200) && lift_fetch_data.now_left_speed < 3 && lift_fetch_data.now_left_speed > -3)) && stretch_fetch_data.now_left_angle > -927.862427 - 150 && stretch_fetch_data.now_left_angle < -927.862427 + 150)
         {
             receive_mine.step5 = 1;
@@ -1453,6 +1564,7 @@ static void Auto_Receive()
         receive_mine.step5 = 0;
         GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-27573.6641,GIMBAL_fetch_data.now_angle, 500);
         //ui_cmd_send.main_air_flag = 2;
+        chassis_speed_scale.speed_change_flag = 4;
         BigPitch_cmd_send.angle = Automatic_mode_target_setting(0.476844788,BigPitch_fetch_data.now_angle,0.4);        
         if(BigPitch_fetch_data.now_angle < 0.476844788 + 0.008 && BigPitch_fetch_data.now_angle > 0.476844788 - 0.008)
         {
@@ -1469,16 +1581,16 @@ static void Auto_Receive()
     if(receive_mine.step7 == 1)
     {
         receive_mine.step6 = 0;
-        BIG_ROLL_cmd_send.angle = Automatic_mode_target_setting(-1.63633919,BIG_ROLL_fetch_data.now_angle,0.4);
-        SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(1.12516212,SMALL_PITCH_fetch_data.now_angle,0.3);
-        YAW_cmd_send.angle = Automatic_mode_target_setting(-0.432677078,YAW_fetch_data.now_angle,0.4);
-       
-        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-27573.6641,GIMBAL_fetch_data.now_angle, 500);
-        stretch_cmd_send.left_angle = Automatic_mode_target_setting(-6962.34521,stretch_fetch_data.now_left_angle,300);
-        stretch_cmd_send.right_angle  = Automatic_mode_target_setting(7015.25244,stretch_fetch_data.now_right_angle,300);
-        lift_cmd_send.left_angle = Automatic_mode_target_setting(-7225.22705 ,lift_fetch_data.now_left_angle,350);
-        lift_cmd_send.right_angle = Automatic_mode_target_setting(7457.42969 ,lift_fetch_data.now_right_angle,350);
-        chassis_speed_scale.speed_change_flag = 4;
+        BIG_ROLL_cmd_send.angle = Automatic_mode_target_setting(-0.542267799,BIG_ROLL_fetch_data.now_angle,0.4);
+        SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(-1.76146317,SMALL_PITCH_fetch_data.now_angle,0.3);
+        YAW_cmd_send.angle = Automatic_mode_target_setting(-1.50854492,YAW_fetch_data.now_angle,0.4);
+        BigPitch_cmd_send.angle = Automatic_mode_target_setting( 1.25352859,BigPitch_fetch_data.now_angle,0.4);   
+     
+        //GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-27573.6641,GIMBAL_fetch_data.now_angle, 500);
+        stretch_cmd_send.left_angle = Automatic_mode_target_setting(-72.7754822,stretch_fetch_data.now_left_angle,300);
+        stretch_cmd_send.right_angle  = Automatic_mode_target_setting(69.2573166,stretch_fetch_data.now_right_angle,300);
+        lift_cmd_send.left_angle = Automatic_mode_target_setting(-14473.4346 ,lift_fetch_data.now_left_angle,350);
+        lift_cmd_send.right_angle = Automatic_mode_target_setting(14485.3848 ,lift_fetch_data.now_right_angle,350);
 
     }
 }
@@ -1496,13 +1608,14 @@ static void Auto_Pull_Out()
     {
         ui_cmd_send.main_air_flag = 1;
         ui_cmd_send.mine_air_flag = 1;
-        BIG_ROLL_cmd_send.angle = Automatic_mode_target_setting(-1.63633919,BIG_ROLL_fetch_data.now_angle,0.4);
-        SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(1.57072544,SMALL_PITCH_fetch_data.now_angle,0.5);
-        YAW_cmd_send.angle = Automatic_mode_target_setting(0.0642786026,YAW_fetch_data.now_angle,0.4);
-        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-8262.33398,GIMBAL_fetch_data.now_angle, 500);
-        //BigPitch_cmd_send.angle = Automatic_mode_target_setting(0,BigPitch_fetch_data.now_angle,0.3);
+        stretch_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.stretch_left,stretch_fetch_data.now_left_angle,300);
+        stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,300);
+        lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,250);
+        lift_cmd_send.right_angle = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,250);
+
         
-        if(YAW_fetch_data.now_angle > 0.0642786026 - 0.005 && YAW_fetch_data.now_angle < 0.0642786026 + 0.005 && BIG_ROLL_fetch_data.now_angle > -1.63633919 - 0.008 && BIG_ROLL_fetch_data.now_angle < -1.63633919 + 0.008 && SMALL_PITCH_fetch_data.now_angle < 1.57072544 + 0.008 && SMALL_PITCH_fetch_data.now_angle > 1.57072544 - 0.008)
+        //BigPitch_cmd_send.angle = Automatic_mode_target_setting(0,BigPitch_fetch_data.now_angle,0.3);
+        if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350)
         {
             pull_inter_mine.step2 = 1;
             pull_inter_mine.now_step = 2;
@@ -1516,13 +1629,13 @@ static void Auto_Pull_Out()
     {
         pull_inter_mine.step1 = 0;
         ui_cmd_send.main_air_flag = 1;
+        BIG_ROLL_cmd_send.angle = Automatic_mode_target_setting(-1.63633919,BIG_ROLL_fetch_data.now_angle,0.4);
+        SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(1.57072544,SMALL_PITCH_fetch_data.now_angle,0.5);
+        YAW_cmd_send.angle = Automatic_mode_target_setting(0.0642786026,YAW_fetch_data.now_angle,0.4);
         GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-8262.33398,GIMBAL_fetch_data.now_angle, 500);
         BigPitch_cmd_send.angle = Automatic_mode_target_setting(0,BigPitch_fetch_data.now_angle,0.4);
-        stretch_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.stretch_left,stretch_fetch_data.now_left_angle,300);
-        stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,300);
-        lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,250);
-        lift_cmd_send.right_angle = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,250);
-        if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350 && BigPitch_fetch_data.now_angle < 0.008 && BigPitch_fetch_data.now_angle > - 0.008)
+        
+        if(YAW_fetch_data.now_angle > 0.0642786026 - 0.005 && YAW_fetch_data.now_angle < 0.0642786026 + 0.005 && BIG_ROLL_fetch_data.now_angle > -1.63633919 - 0.008 && BIG_ROLL_fetch_data.now_angle < -1.63633919 + 0.008 && SMALL_PITCH_fetch_data.now_angle < 1.57072544 + 0.008 && SMALL_PITCH_fetch_data.now_angle > 1.57072544 - 0.008 && BigPitch_fetch_data.now_angle < 0.08 && BigPitch_fetch_data.now_angle > -0.08)
         {
             pull_inter_mine.step3 = 1;
             pull_inter_mine.now_step = 3;
@@ -1536,6 +1649,7 @@ static void Auto_Pull_Out()
     {
         pull_inter_mine.step2 = 0;
         ui_cmd_send.main_air_flag = 1;
+        ui_cmd_send.mine_air_flag = 2;
         GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-8262.33398,GIMBAL_fetch_data.now_angle, 500);
         BigPitch_cmd_send.angle = Automatic_mode_target_setting(1.47478485,BigPitch_fetch_data.now_angle,0.4);
         stretch_cmd_send.left_angle = Automatic_mode_target_setting(-1927.862427,stretch_fetch_data.now_left_angle,300);
@@ -1558,7 +1672,7 @@ static void Auto_Pull_Out()
     {
         pull_inter_mine.step3 = 0;
         ui_cmd_send.main_air_flag = 1;
-        ui_cmd_send.mine_air_flag = 2;
+        
         delay_flag1++;
         if(delay_flag1 > 800)
         {
@@ -1578,6 +1692,7 @@ static void Auto_Pull_Out()
         SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(1.91825008,SMALL_PITCH_fetch_data.now_angle,0.08);
         lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,300);
         lift_cmd_send.right_angle = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,300);
+        chassis_speed_scale.speed_change_flag = 3;
         if(SMALL_PITCH_fetch_data.now_angle < 1.91825008 + 0.008 && SMALL_PITCH_fetch_data.now_angle > 1.91825008 - 0.008 && lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200)
         {
             pull_inter_mine.step6 = 1;
@@ -1598,7 +1713,6 @@ static void Auto_Pull_Out()
         stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,300);
         //lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,300);
         //lift_cmd_send.right_angle = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,300);
-        chassis_speed_scale.speed_change_flag = 3;
 
     //     if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 150 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 150)
     //     {
@@ -1614,6 +1728,19 @@ static void Auto_Pull_Out()
     // {
     //     pull_inter_mine.step5 = 0;
         BigPitch_cmd_send.angle = Automatic_mode_target_setting(0.4,BigPitch_fetch_data.now_angle,0.3);
+        if(BigPitch_fetch_data.now_angle < 0.4 + 0.01 && BigPitch_fetch_data.now_angle > 0.4 - 0.01 && GIMBAL_fetch_data.now_angle > -26592.1445 - 150 &&  GIMBAL_fetch_data.now_angle < -26592.1445 + 150 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 150 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 150)
+        {
+            pull_inter_mine.step7 = 1;
+            pull_inter_mine.now_step = 7;
+        }
+        else{
+            pull_inter_mine.step7 = 0;
+            pull_inter_mine.now_step = 6;
+        }
+    }
+    if(pull_inter_mine.step7 == 1)
+    {
+        pull_inter_mine.step6 = 0;
     }
               
 }
@@ -1624,7 +1751,7 @@ static void Auto_Pull_Out()
  */
 static void Auto_NO_Mine_Turtle()
 {
-    GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-18600.1621,GIMBAL_fetch_data.now_angle, 500);
+    
     if(turtle[0].step1 == 1)
     {
         ui_cmd_send.main_air_flag = 2;
@@ -1632,7 +1759,7 @@ static void Auto_NO_Mine_Turtle()
         stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,400);
         lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,350);
         lift_cmd_send.right_angle = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,350);
-        
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-18600.1621,GIMBAL_fetch_data.now_angle, 500);
         if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350)
         {
             turtle[0].step2 = 1;
@@ -1646,11 +1773,13 @@ static void Auto_NO_Mine_Turtle()
     if(turtle[0].step2 == 1)
     {
         turtle[0].step1 = 0;
+        chassis_speed_scale.speed_change_flag = 4;
         ui_cmd_send.main_air_flag = 2;
         BIG_ROLL_cmd_send.angle = Automatic_mode_target_setting(-1.63633919,BIG_ROLL_fetch_data.now_angle,0.4);
         SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(1.28995991,SMALL_PITCH_fetch_data.now_angle,0.5);
         YAW_cmd_send.angle = Automatic_mode_target_setting(1.03818607,YAW_fetch_data.now_angle,0.4);
         BigPitch_cmd_send.angle = Automatic_mode_target_setting(0.348667145,BigPitch_fetch_data.now_angle,0.4);
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-18600.1621,GIMBAL_fetch_data.now_angle, 500);
         if(YAW_fetch_data.now_angle > 1.03818607 - 0.005 && YAW_fetch_data.now_angle < 1.03818607 + 0.005 && BIG_ROLL_fetch_data.now_angle > -1.63633919 - 0.008 && BIG_ROLL_fetch_data.now_angle < -1.63633919 + 0.008 && BigPitch_fetch_data.now_angle > 0.348667145 - 0.008 && BigPitch_fetch_data.now_angle < 0.348667145 + 0.008 && SMALL_PITCH_fetch_data.now_angle < 1.28995991 + 0.008 && SMALL_PITCH_fetch_data.now_angle > 1.28995991 - 0.008)
         {
             turtle[0].step3 = 1;
@@ -1669,7 +1798,6 @@ static void Auto_NO_Mine_Turtle()
         stretch_cmd_send.right_angle  = Automatic_mode_target_setting(7483.92871,stretch_fetch_data.now_right_angle,400);
         lift_cmd_send.left_angle = Automatic_mode_target_setting(-13688.3086,lift_fetch_data.now_left_angle,350);
         lift_cmd_send.right_angle = Automatic_mode_target_setting(14100.6006,lift_fetch_data.now_right_angle,350);
-        chassis_speed_scale.speed_change_flag = 4;
     }
 
 } 
@@ -1680,7 +1808,6 @@ static void Auto_NO_Mine_Turtle()
  */
 static void Auto_ONE_Mine_BUT_Warehouse_NO_Mine_Turtle()
 {
-    GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-18600.1621,GIMBAL_fetch_data.now_angle, 500);
     if(turtle[1].step1 == 1)
     {
         ui_cmd_send.main_air_flag = 1;
@@ -1688,7 +1815,7 @@ static void Auto_ONE_Mine_BUT_Warehouse_NO_Mine_Turtle()
         stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,400);
         lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,350);
         lift_cmd_send.right_angle = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,350);
-        
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-18600.1621,GIMBAL_fetch_data.now_angle, 500);
         if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350)
         {
             turtle[1].step2 = 1;
@@ -1707,6 +1834,8 @@ static void Auto_ONE_Mine_BUT_Warehouse_NO_Mine_Turtle()
         SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(-1.86217308,SMALL_PITCH_fetch_data.now_angle,0.5);
         YAW_cmd_send.angle = Automatic_mode_target_setting(1.18314648,YAW_fetch_data.now_angle,0.4);
         BigPitch_cmd_send.angle = Automatic_mode_target_setting(-0.438697815,BigPitch_fetch_data.now_angle,0.4);
+        chassis_speed_scale.speed_change_flag = 4;
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-18600.1621,GIMBAL_fetch_data.now_angle, 500);
         if(YAW_fetch_data.now_angle > 1.18314648 - 0.005 && YAW_fetch_data.now_angle < 1.18314648 + 0.005 && BIG_ROLL_fetch_data.now_angle > -0.0093460083 - 0.008 && BIG_ROLL_fetch_data.now_angle < -0.0093460083 + 0.008 && BigPitch_fetch_data.now_angle > -0.438697815 - 0.008 && BigPitch_fetch_data.now_angle < -0.438697815 + 0.008 && SMALL_PITCH_fetch_data.now_angle < -1.86217308 + 0.008 && SMALL_PITCH_fetch_data.now_angle > -1.86217308 - 0.008)
         {
             turtle[1].step3 = 1;
@@ -1725,13 +1854,11 @@ static void Auto_ONE_Mine_BUT_Warehouse_NO_Mine_Turtle()
         stretch_cmd_send.right_angle  = Automatic_mode_target_setting(7483.92871,stretch_fetch_data.now_right_angle,400);
         lift_cmd_send.left_angle = Automatic_mode_target_setting(-14137.6484,lift_fetch_data.now_left_angle,350);
         lift_cmd_send.right_angle = Automatic_mode_target_setting(14122.3086,lift_fetch_data.now_right_angle,350);
-        chassis_speed_scale.speed_change_flag = 4;
     }
 }
 
 static void Auto_Double_Mine()
 {
-     GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-18600.1621,GIMBAL_fetch_data.now_angle, 500);
     if(turtle[2].step1 == 1)
     {
         ui_cmd_send.main_air_flag = 1;
@@ -1739,7 +1866,7 @@ static void Auto_Double_Mine()
         stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,400);
         lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,350);
         lift_cmd_send.right_angle = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,350);
-        
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-18600.1621,GIMBAL_fetch_data.now_angle, 500);
         if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350)
         {
             turtle[2].step2 = 1;
@@ -1758,6 +1885,8 @@ static void Auto_Double_Mine()
         SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(-1.5611887,SMALL_PITCH_fetch_data.now_angle,0.5);
         YAW_cmd_send.angle = Automatic_mode_target_setting(0.903142929,YAW_fetch_data.now_angle,0.4);
         BigPitch_cmd_send.angle = Automatic_mode_target_setting(0.464637756,BigPitch_fetch_data.now_angle,0.4);
+        chassis_speed_scale.speed_change_flag = 4;
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(-18600.1621,GIMBAL_fetch_data.now_angle, 500);
         if(YAW_fetch_data.now_angle > 0.903142929 - 0.005 && YAW_fetch_data.now_angle < 0.903142929 + 0.005 && BIG_ROLL_fetch_data.now_angle > -1.8568325 - 0.008 && BIG_ROLL_fetch_data.now_angle < -1.8568325 + 0.008 && BigPitch_fetch_data.now_angle > 0.464637756 - 0.008 && BigPitch_fetch_data.now_angle < 0.464637756 + 0.008 && SMALL_PITCH_fetch_data.now_angle < -1.5611887 + 0.008 && SMALL_PITCH_fetch_data.now_angle > -1.5611887 - 0.008)
         {
             turtle[2].step3 = 1;
@@ -1776,9 +1905,385 @@ static void Auto_Double_Mine()
         stretch_cmd_send.right_angle  = Automatic_mode_target_setting(7015.25244,stretch_fetch_data.now_right_angle,300);
         lift_cmd_send.left_angle = Automatic_mode_target_setting(-7225.22705 ,lift_fetch_data.now_left_angle,350);
         lift_cmd_send.right_angle = Automatic_mode_target_setting(7457.42969 ,lift_fetch_data.now_right_angle,350);
-        chassis_speed_scale.speed_change_flag = 4;
     }
 }
+
+/**
+ * @brief 双金
+ * 
+ */
+void Twice_Gold()
+{
+    switch (auto_Assistant.type)
+    {
+    case 14://中金
+         if(twice_gold[0].step1 == 1)
+    {
+        ui_cmd_send.mine_air_flag = 1;
+        stretch_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.stretch_left,stretch_fetch_data.now_left_angle,200);
+        stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,200);
+        lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,150);
+        lift_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,150);
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(255,GIMBAL_fetch_data.now_angle, 500);
+        if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350)
+        {
+            twice_gold[0].step2 = 1;
+            twice_gold[0].now_step = 2;
+        }
+        else{
+            twice_gold[0].step2 = 0;
+            twice_gold[0].now_step = 1;
+        }
+    }
+    if(twice_gold[0].step2 == 1)
+    {               
+
+        BIG_ROLL_cmd_send.angle = Automatic_mode_target_setting(-1.49938965,BIG_ROLL_fetch_data.now_angle,0.4);
+        SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(0.0341424942,SMALL_PITCH_fetch_data.now_angle,0.3);
+        YAW_cmd_send.angle = Automatic_mode_target_setting(0.08182621,YAW_fetch_data.now_angle,0.2);
+        BigPitch_cmd_send.angle = Automatic_mode_target_setting(-0.04348754880,BigPitch_fetch_data.now_angle,0.6);
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(255,GIMBAL_fetch_data.now_angle, 500);
+        twice_gold[0].step1 = 0;
+        if(YAW_fetch_data.now_angle > 0.08182621 - 0.005 && YAW_fetch_data.now_angle < 0.08182621 + 0.005 && BIG_ROLL_fetch_data.now_angle > -1.49938965 - 0.008 && BIG_ROLL_fetch_data.now_angle < -1.49938965 + 0.008 && BigPitch_fetch_data.now_angle > -0.04348754880 - 0.008 && BigPitch_fetch_data.now_angle < -0.04348754880 + 0.008 && SMALL_PITCH_fetch_data.now_angle < 0.0341424942 + 0.008 && SMALL_PITCH_fetch_data.now_angle > 0.0341424942 - 0.008)
+        {
+            twice_gold[0].step3 = 1;
+            twice_gold[0].now_step = 3;
+        }
+        else{
+            twice_gold[0].step3 = 0;
+            twice_gold[0].now_step =2;
+        }
+    }
+    if(twice_gold[0].step3 == 1)
+    {
+        twice_gold[0].step2 = 0;
+        stretch_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.stretch_left,stretch_fetch_data.now_left_angle,200);
+        stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,200);
+        lift_cmd_send.left_angle = Automatic_mode_target_setting(-14344.8691,lift_fetch_data.now_left_angle,150);
+        lift_cmd_send.right_angle = Automatic_mode_target_setting(13964.3887,lift_fetch_data.now_right_angle,150);
+        chassis_speed_scale.speed_change_flag = 3;
+        ui_cmd_send.main_air_flag = 1;
+        if (lift_fetch_data.now_left_angle < -14344.8691 + 200 && lift_fetch_data.now_left_angle > -14344.8691 - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350)
+        {
+            twice_gold[0].step4 = 1;
+            twice_gold[0].now_step = 4;
+        }
+        else{
+            twice_gold[0].step4 = 0;
+            twice_gold[0].now_step = 3;
+        }
+    }
+    if(twice_gold[0].step4 == 1)
+    {
+        twice_gold[0].step3 = 0;
+    }
+        break;
+    case 13://左金
+    if(twice_gold[1].step1 == 1)
+    {
+        ui_cmd_send.mine_air_flag = 1;
+        stretch_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.stretch_left,stretch_fetch_data.now_left_angle,200);
+        stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,200);
+        lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,150);
+        lift_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,150);
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(255,GIMBAL_fetch_data.now_angle, 500);
+        if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350)
+        {
+            twice_gold[1].step2 = 1;
+            twice_gold[1].now_step = 2;
+        }
+        else{
+            twice_gold[1].step2 = 0;
+            twice_gold[1].now_step = 1;
+        }
+    }
+    if(twice_gold[1].step2 == 1)
+    {               
+
+        BIG_ROLL_cmd_send.angle = Automatic_mode_target_setting(0.0696191788,BIG_ROLL_fetch_data.now_angle,0.4);
+        SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(-0.632677078,SMALL_PITCH_fetch_data.now_angle,0.3);
+        YAW_cmd_send.angle = Automatic_mode_target_setting(0.76227169,YAW_fetch_data.now_angle,0.2);
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(255,GIMBAL_fetch_data.now_angle, 500);
+        BigPitch_cmd_send.angle = Automatic_mode_target_setting(-0.0679016113,BigPitch_fetch_data.now_angle,0.6);
+        twice_gold[1].step1 = 0;
+        if(YAW_fetch_data.now_angle > 0.76227169 - 0.005 && YAW_fetch_data.now_angle < 0.76227169 + 0.005 && BIG_ROLL_fetch_data.now_angle > 0.0696191788 - 0.008 && BIG_ROLL_fetch_data.now_angle < 0.0696191788 + 0.008 && BigPitch_fetch_data.now_angle > -0.0679016113 - 0.008 && BigPitch_fetch_data.now_angle < -0.0679016113 + 0.008 && SMALL_PITCH_fetch_data.now_angle < -0.632677078 + 0.008 && SMALL_PITCH_fetch_data.now_angle > -0.632677078 - 0.008)
+        {
+            twice_gold[1].step3 = 1;
+            twice_gold[1].now_step = 3;
+        }
+        else{
+            twice_gold[1].step3 = 0;
+            twice_gold[1].now_step =2;
+        }
+    }
+    if(twice_gold[1].step3 == 1)
+    {
+        twice_gold[1].step2 = 0;
+        stretch_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.stretch_left,stretch_fetch_data.now_left_angle,200);
+        stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,200);
+        lift_cmd_send.left_angle = Automatic_mode_target_setting(-14344.8691,lift_fetch_data.now_left_angle,150);
+        lift_cmd_send.right_angle = Automatic_mode_target_setting(13964.3887,lift_fetch_data.now_right_angle,150);
+        chassis_speed_scale.speed_change_flag = 3;
+        ui_cmd_send.main_air_flag = 1;
+        if (lift_fetch_data.now_left_angle < -14344.8691 + 200 && lift_fetch_data.now_left_angle > 14344.8691 - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350)
+        {
+            twice_gold[1].step4 = 1;
+            twice_gold[1].now_step = 4;
+        }
+        else{
+            twice_gold[1].step4 = 0;
+            twice_gold[1].now_step = 3;
+        }
+    }
+    if(twice_gold[1].step4 == 1)
+    {
+        twice_gold[1].step3 = 0;
+    }
+        break;
+
+
+    case 15://右金
+    
+        if(twice_gold[2].step1 == 1)
+    {
+        ui_cmd_send.mine_air_flag = 1;
+        stretch_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.stretch_left,stretch_fetch_data.now_left_angle,200);
+        stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,200);
+        lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,150);
+        lift_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,150);
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(255,GIMBAL_fetch_data.now_angle, 500);
+        if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350)
+        {
+            twice_gold[2].step2 = 1;
+            twice_gold[2].now_step = 2;
+        }
+        else{
+            twice_gold[2].step2 = 0;
+            twice_gold[2].now_step = 1;
+        }
+    }
+    if(twice_gold[2].step2 == 1)
+    {               
+
+        BIG_ROLL_cmd_send.angle = Automatic_mode_target_setting(-0.131799698,BIG_ROLL_fetch_data.now_angle,0.4);
+        SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(1.03093719,SMALL_PITCH_fetch_data.now_angle,0.3);
+        YAW_cmd_send.angle = Automatic_mode_target_setting(-0.728701057,YAW_fetch_data.now_angle,0.2);
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(255,GIMBAL_fetch_data.now_angle, 500);
+        BigPitch_cmd_send.angle = Automatic_mode_target_setting(-0.0907897949,BigPitch_fetch_data.now_angle,0.6);
+        twice_gold[2].step1 = 0;
+        if(YAW_fetch_data.now_angle > -0.728701057 - 0.005 && YAW_fetch_data.now_angle < -0.728701057 + 0.005 && BIG_ROLL_fetch_data.now_angle > -0.131799698 - 0.008 && BIG_ROLL_fetch_data.now_angle < -0.131799698 + 0.008 && BigPitch_fetch_data.now_angle > -0.0907897949 - 0.008 && BigPitch_fetch_data.now_angle < -0.0907897949 + 0.008 && SMALL_PITCH_fetch_data.now_angle > 1.03093719 - 0.008 && SMALL_PITCH_fetch_data.now_angle < 1.03093719 + 0.008)
+        {
+            twice_gold[2].step3 = 1;
+            twice_gold[2].now_step = 3;
+        }
+        else{
+            twice_gold[2].step3 = 0;
+            twice_gold[2].now_step =2;
+        }
+    }
+    if(twice_gold[2].step3 == 1)
+    {
+        twice_gold[2].step2 = 0;
+        stretch_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.stretch_left,stretch_fetch_data.now_left_angle,200);
+        stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,200);
+        lift_cmd_send.left_angle = Automatic_mode_target_setting(-14344.8691,lift_fetch_data.now_left_angle,150);
+        lift_cmd_send.right_angle = Automatic_mode_target_setting(13964.3887,lift_fetch_data.now_right_angle,150);
+        chassis_speed_scale.speed_change_flag = 3;
+        ui_cmd_send.main_air_flag = 1;
+        if (lift_fetch_data.now_left_angle < -14344.8691 + 200 && lift_fetch_data.now_left_angle > 14344.8691 - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350)
+        {
+            twice_gold[2].step4 = 1;
+            twice_gold[2].now_step = 4;
+        }
+        else{
+            twice_gold[2].step4 = 0;
+            twice_gold[2].now_step = 3;
+        }
+    }
+    if(twice_gold[2].step4 == 1)
+    {
+        twice_gold[2].step3 = 0;
+    }
+    
+
+    default:
+        break;
+    }
+    
+}
+
+/**
+ * @brief 自动地矿
+ * 
+ */
+void Auto_Ground_Mine()
+{
+    if(ground_mine[0].step1 == 1)
+    {
+        
+        stretch_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.stretch_left,stretch_fetch_data.now_left_angle,200);
+        stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,200);
+        lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,250);
+        lift_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,250);
+        chassis_speed_scale.speed_change_flag = 2;
+        //GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(initial_angle.gimbal,GIMBAL_fetch_data.now_angle, 500);
+        ui_cmd_send.main_air_flag = 1;
+        if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350)
+        {
+            ground_mine[0].step2 = 1;
+            ground_mine[0].now_step = 2;
+        }
+        else{
+            ground_mine[0].step2 = 0;
+            ground_mine[0].now_step = 1;
+        }
+    }
+    if(ground_mine[0].step2 == 1)
+    {
+        BIG_ROLL_cmd_send.angle = Automatic_mode_target_setting(-1.6172657,BIG_ROLL_fetch_data.now_angle,0.4);
+        SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(0.87376976,SMALL_PITCH_fetch_data.now_angle,0.3);
+        YAW_cmd_send.angle = Automatic_mode_target_setting(0.0322351456,YAW_fetch_data.now_angle,0.2);
+        BigPitch_cmd_send.angle = Automatic_mode_target_setting(0.624855042,BigPitch_fetch_data.now_angle,0.6);
+        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(255,GIMBAL_fetch_data.now_angle, 500);
+        ground_mine[0].step1 = 0;
+    }
+}
+
+
+/**
+ * @brief 自动拉起地矿
+ * 
+ */
+int16_t delayflag2 = 0;
+void Auto_Pull_Ground_Mine()
+{
+    if(ground_mine[1].step1 == 1)
+    {
+        chassis_speed_scale.speed_change_flag = 2;
+        lift_cmd_send.left_angle = Automatic_mode_target_setting(-7578.85498,lift_fetch_data.now_left_angle,250);
+        lift_cmd_send.right_angle  = Automatic_mode_target_setting(7834.48047,lift_fetch_data.now_right_angle,250);
+        if(lift_fetch_data.now_left_angle > -7578.85498 - 150 && lift_fetch_data.now_left_angle < -7578.85498 + 150)
+        {
+            ground_mine[1].step2 = 1;
+            ground_mine[1].now_step = 2;
+        }
+        else
+        {
+            ground_mine[1].step2 = 0;
+            ground_mine[1].now_step = 1;
+        }
+    }
+    if(ground_mine[1].step2 == 1)
+    {   
+        ground_mine[1].step1 = 0;
+        ui_cmd_send.main_air_flag = 1;
+        delayflag2++;
+        chassis_speed_scale.speed_change_flag = 3;
+        if(delayflag2 > 400)
+        {
+            ground_mine[1].step3 = 1;
+            ground_mine[1].now_step = 3;
+            delayflag2 = 0;
+        }
+        else{
+            ground_mine[1].step3 = 0;
+            ground_mine[1].now_step = 2;
+        }
+    }
+    if(ground_mine[1].step3 == 1)
+    {
+        ground_mine[1].step2 = 0;
+        lift_cmd_send.left_angle = Automatic_mode_target_setting(-2578.85498,lift_fetch_data.now_left_angle,250);
+        lift_cmd_send.right_angle  = Automatic_mode_target_setting(2834.48047,lift_fetch_data.now_right_angle,250);
+    }
+    
+}
+
+int16_t delayflag3 = 0;
+static void Auto_Silver()
+{
+    if(auto_Assistant.type == 18)
+    {
+        if(silver_auto[0].step1 == 1)
+        {
+            stretch_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.stretch_left,stretch_fetch_data.now_left_angle,200);
+            stretch_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.stretch_right,stretch_fetch_data.now_right_angle,200);
+            lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,250);
+            lift_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,250);
+        //  GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(initial_angle.gimbal,GIMBAL_fetch_data.now_angle, 500);
+            ui_cmd_send.main_air_flag = 1;
+            chassis_speed_scale.speed_change_flag = 3;
+            if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 && stretch_fetch_data.now_left_angle > initial_angle.stretch_left - 350 && stretch_fetch_data.now_left_angle < initial_angle.stretch_left + 350){
+                silver_auto[0].step2 = 1;
+                silver_auto[0].now_step = 2;
+            }
+            else{
+                silver_auto[0].step2 = 0;
+                silver_auto[0].now_step = 1;
+            }
+        }
+        if(silver_auto[0].step2 == 1)
+        {
+            silver_auto[0].step1 = 0;
+            BIG_ROLL_cmd_send.angle = Automatic_mode_target_setting(1.53486729,BIG_ROLL_fetch_data.now_angle,0.4);
+            SMALL_PITCH_cmd_send.angle = Automatic_mode_target_setting(-1.82326221,SMALL_PITCH_fetch_data.now_angle,0.3);
+            YAW_cmd_send.angle = Automatic_mode_target_setting(0.0459680557,YAW_fetch_data.now_angle,0.2);
+            BigPitch_cmd_send.angle = Automatic_mode_target_setting(-0.377662659,BigPitch_fetch_data.now_angle,0.6);
+            stretch_cmd_send.left_angle = Automatic_mode_target_setting(-6290.15771,stretch_fetch_data.now_left_angle,200);
+            stretch_cmd_send.right_angle  = Automatic_mode_target_setting(6536.90869,stretch_fetch_data.now_right_angle,200);
+        }
+    }
+    //拉矿
+    if(auto_Assistant.type == 19)
+    {
+        if(silver_auto[1].step1 == 1)
+        {
+            ui_cmd_send.main_air_flag = 1;
+            lift_cmd_send.left_angle = Automatic_mode_target_setting(-5496.41797,lift_fetch_data.now_left_angle,250);
+            lift_cmd_send.right_angle  = Automatic_mode_target_setting(5404.04297,lift_fetch_data.now_right_angle,250);
+            if(lift_fetch_data.now_left_angle < -5496.41797 + 200 && lift_fetch_data.now_left_angle > -5496.41797 - 200){
+                silver_auto[1].step2 = 1;
+                silver_auto[1].now_step = 2;
+            }
+        }
+        if(silver_auto[1].step2 == 1)
+        {
+            ui_cmd_send.main_air_flag = 1;
+            delayflag3++;
+            if(delayflag3 > 200)
+            {
+                silver_auto[1].step3 = 1;
+                silver_auto[1].now_step = 3;
+            }
+            else{
+                silver_auto[1].step3 = 0;
+                silver_auto[1].now_step = 2;
+            }
+        }
+        if(silver_auto[1].step3 == 1)
+        {
+            lift_cmd_send.left_angle = Automatic_mode_target_setting(initial_angle.lift_left,lift_fetch_data.now_left_angle,250);
+            lift_cmd_send.right_angle  = Automatic_mode_target_setting(initial_angle.lift_right,lift_fetch_data.now_right_angle,250);
+            chassis_speed_scale.speed_change_flag = 3;
+            if(lift_fetch_data.now_left_angle < initial_angle.lift_left + 200 && lift_fetch_data.now_left_angle > initial_angle.lift_left - 200 ){
+                silver_auto[1].step4 = 1;
+                silver_auto[1].now_step = 4;
+            }
+            else{
+                silver_auto[1].step4 = 0;
+                silver_auto[1].now_step = 3;
+            }
+        }
+        if(silver_auto[1].step4 == 1)
+        {
+            silver_auto[1].step3 = 0;
+        }
+       
+    }
+    
+}
+
+
 
 /**
  * @brief 统一的模式管理
@@ -1794,7 +2299,6 @@ static void Auto_Mode()
     case 3:
     case 4:
         Auto_gold();
-        GIMBAL_Data_cmd_send.angle = Automatic_mode_target_setting(initial_angle.gimbal,GIMBAL_fetch_data.now_angle, 500);
         break;
     case 5:
         Auto_Sliver();
@@ -1820,11 +2324,39 @@ static void Auto_Mode()
     case 12:
         Auto_Double_Mine();
         break;
-
+    case 13:
+    case 14:
+    case 15:
+        Twice_Gold();
+        break;
+    case 16:
+        Auto_Ground_Mine();
+        break;
+    case 17:
+        Auto_Pull_Ground_Mine();
+        break;
+    case 18:
+    case 19:
+        Auto_Silver();
+        break;
     default:
         break;
     }
   
+}
+
+/**
+ * @brief 防止遥控器断连
+ * 
+ */
+static void Handle_Rc_Miss()
+{
+    if(!RemoteControlIsOnline())
+    {
+        memcpy(rc_data,vision_rc_data,sizeof(RC_ctrl_t));
+        rc_data->rc.switch_left = 2;
+        rc_data->rc.switch_right = 1;
+    }
 }
 
 static int8_t last_mode;
@@ -1847,6 +2379,7 @@ void RobotCMDTask()
     SubGetMessage(vision_joint_data_sub, (void *)&Vision_Joint_Data_fetch_data);
     SubGetMessage(GIMBAL_feed_sub, (void *)&GIMBAL_fetch_data);
 
+   // Handle_Rc_Miss();
 
     Emergency_Handling();
 
@@ -1854,7 +2387,8 @@ void RobotCMDTask()
     ui_cmd_send.big_pitch_temputure = BigPitch_fetch_data.temp;
 
     //加入手动刷新UI
-   
+
+    //记录模式
     last_mode = mode.control_mode;
 
     if(rc_data[TEMP].mouse.press_l)
@@ -1919,7 +2453,6 @@ void RobotCMDTask()
 
     air_controll();
 
-
     PubPushMessage(ui_cmd_pub, (void *)&ui_cmd_send);
     PubPushMessage(chassis_cmd_pub, (void *)&chassis_cmd_send);
     PubPushMessage(lift_cmd_pub, (void *)&lift_cmd_send);
@@ -1932,7 +2465,5 @@ void RobotCMDTask()
     PubPushMessage(SMALL_ROLL_cmd_pub, (void *)&SMALL_ROLL_cmd_send);
     PubPushMessage(vision_joint_data_pub, (void *)&Vision_Joint_Data_cmd_send);
     PubPushMessage(GIMBAL_cmd_pub, (void *)&GIMBAL_Data_cmd_send);
-
-
 
 }

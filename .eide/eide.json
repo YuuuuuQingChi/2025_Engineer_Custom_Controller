@@ -10,9 +10,9 @@
     "modules",
     "application",
     "USB_DEVICE",
-    "application/UI",
     "application/servo",
-    "application/stretch"
+    "application/stretch",
+    "application/ui"
   ],
   "virtualFolder": {
     "name": "<virtual_root>",
