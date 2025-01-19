@@ -6,33 +6,42 @@
 #include "controller.h"
 #include "motor_def.h"
 #include "daemon.h"
+#include "stdbool.h"
+#define LK_MOTOR_MX_CNT        4 // 最多允许4个LK电机使用多电机指令,挂载在一条总线上
 
-#define LK_MOTOR_MX_CNT 4 // 最多允许4个LK电机使用多电机指令,挂载在一条总线上
-
-#define I_MIN -2000
-#define I_MAX 2000
-#define CURRENT_SMOOTH_COEF 0.9f
-#define SPEED_SMOOTH_COEF 0.85f
+#define I_MIN                  -2000
+#define I_MAX                  2000
+#define CURRENT_SMOOTH_COEF    0.9f
+#define SPEED_SMOOTH_COEF      0.85f
 #define REDUCTION_RATIO_DRIVEN 1
 // #define ECD_ANGLE_COEF_LK (360.0f / 65536.0f)
 #define CURRENT_TORQUE_COEF_LK 0.003645f // 电流设定值转换成扭矩的系数,算出来的设定值除以这个系数就是扭矩值
 
 typedef struct
 {
-    uint16_t last_ecd;        // 上一次读取的编码器值
-    uint16_t ecd;             // 当前编码器值
-    uint16_t max_ecd;         // 编码器数值范围（MS5005与LK9025的回复报文中仅编码器精确度不同）
 
-    float angle_single_round; // 单圈角度
-    float speed_rads;         // speed rad/s
-    int16_t real_current;     // 实际电流
-    uint8_t temperature;      // 温度,C°
+    int8_t command_data;
+    int8_t temperature; // 温度,C°
+    int16_t iq;
+    int16_t raw_speed;
+    uint16_t raw_encoder_angle;
 
-    float total_angle;   // 总角度
-    int32_t total_round; // 总圈数
+    uint16_t last_raw_encoder_angle; // 上一次读取的编码器值
+    int32_t total_round;             // 总圈数
+    float resolution;                // 分辨率(关于电流的)
+    float angle_single_round;        // 单圈角度
+    uint16_t max_ecd;                // 编码器数值范围
+    float torque_constant;
+    uint32_t offset;
+    bool is_reserved;
+
+    float total_radian; // 总角度rad
+    float speed_rpm;    // speed rad/s
+    float torque;
 
     float feed_dt;
     uint32_t feed_dwt_cnt;
+
 } LKMotor_Measure_t;
 
 typedef struct
@@ -56,7 +65,7 @@ typedef struct
 
     DaemonInstance *daemon;
 
-    Motor_Type_e motor_type;        // 电机类型
+    Motor_Type_e motor_type; // 电机类型
 } LKMotorInstance;
 
 /**
@@ -97,5 +106,5 @@ void LKMotorStop(LKMotorInstance *motor);
 void LKMotorEnable(LKMotorInstance *motor);
 
 uint8_t LKMotorIsOnline(LKMotorInstance *motor);
-
+void LKMotorSetSpeed(LKMotorInstance *motor, int32_t speed);
 #endif // LKmotor_H

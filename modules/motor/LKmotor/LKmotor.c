@@ -17,34 +17,32 @@ static CANInstance *sender_instance; // 多电机发送时使用的caninstance(�
  */
 static void LKMotorDecode(CANInstance *_instance)
 {
-    LKMotorInstance *motor = (LKMotorInstance *)_instance->id; // 通过caninstance保存的father id获取对应的motorinstance
+    LKMotorInstance *motor     = (LKMotorInstance *)_instance->id; // 通过caninstance保存的father id获取对应的motorinstance
     LKMotor_Measure_t *measure = &motor->measure;
-    uint8_t *rx_buff = _instance->rx_buff;
-
+    uint8_t *rx_buff           = _instance->rx_buff;
+    float offset               = motor->measure.offset;
+    float sign                 = motor->measure.is_reserved ? -1.0 : 1.0;
     DaemonReload(motor->daemon); // 喂狗
     measure->feed_dt = DWT_GetDeltaT(&measure->feed_dwt_cnt);
 
-    measure->last_ecd = measure->ecd;
-    measure->ecd = (uint16_t)((rx_buff[7] << 8) | rx_buff[6]);
+    measure->last_raw_encoder_angle = measure->raw_encoder_angle;
+    measure->command_data           = rx_buff[0];
+    measure->temperature            = rx_buff[1];
+    measure->iq                     = (rx_buff[3] << 8) | rx_buff[2];
+    measure->raw_speed              = (rx_buff[5] << 8) | rx_buff[4];
+    measure->raw_encoder_angle      = (rx_buff[7] << 8) | rx_buff[6];
 
-    // measure->angle_single_round = ECD_ANGLE_COEF_LK * measure->ecd;
-    // todo:优化
-    measure->angle_single_round = (360.0f / (float)measure->max_ecd) * measure->ecd;
+    measure->raw_encoder_angle  = measure->raw_encoder_angle >= offset ? (measure->raw_encoder_angle - offset) : (measure->raw_encoder_angle + measure->max_ecd - offset);
+    measure->angle_single_round = (360.0f / (float)measure->max_ecd) * measure->raw_encoder_angle;
 
-    measure->speed_rads = (1 - SPEED_SMOOTH_COEF) * measure->speed_rads +
-                          DEGREE_2_RAD * SPEED_SMOOTH_COEF * (float)((int16_t)(rx_buff[5] << 8 | rx_buff[4]));
-
-    measure->real_current = (1 - CURRENT_SMOOTH_COEF) * measure->real_current +
-                            CURRENT_SMOOTH_COEF * (float)((int16_t)(rx_buff[3] << 8 | rx_buff[2]));
-
-    measure->temperature = rx_buff[1];
-    
-    if ((int16_t)measure->ecd - measure->last_ecd > measure->max_ecd/2)
+    if ((int16_t)measure->raw_encoder_angle - measure->last_raw_encoder_angle > measure->max_ecd / 2)
         measure->total_round--;
-    else if ((int16_t)measure->ecd - measure->last_ecd < -measure->max_ecd/2)
+    else if ((int16_t)measure->raw_encoder_angle - measure->last_raw_encoder_angle < -measure->max_ecd / 2)
         measure->total_round++;
 
-    measure->total_angle = measure->total_round * 360 + measure->angle_single_round;
+    measure->total_radian = sign * ((measure->total_round * 360 + measure->angle_single_round) * DEGREE_2_RAD);
+    measure->speed_rpm    = sign * (measure->raw_speed / 6.0);
+    measure->torque       = sign * (measure->iq * motor->measure.resolution * motor->measure.torque_constant);
 }
 
 static void LKMotorLostCallback(void *motor_ptr)
@@ -67,37 +65,44 @@ LKMotorInstance *LKMotorInit(Motor_Init_Config_s *config)
     motor->other_speed_feedback_ptr = config->controller_param_init_config.other_speed_feedback_ptr;
 
     motor->motor_type = config->motor_type;
-    switch(motor->motor_type){
+    switch (motor->motor_type) {
         case LK_MS5005:
             motor->measure.max_ecd = 32768;
             break;
-        case LK9025:
-            motor->measure.max_ecd = 16383;
+        case LK_MS7015V3:
+            motor->measure.resolution      = 33.0f / 4096.0f;
+            motor->measure.max_ecd         = 32768;
+            motor->measure.torque_constant = 0.67;
+            break;
+        case LK_MS9015:
+            motor->measure.resolution      = 33.0f / 4096.0f;
+            motor->measure.max_ecd         = 32768;
+            motor->measure.torque_constant = 0.9;
+            break;
+        case LK_MG4010:
+            motor->measure.resolution      = 66.0f / 4096.0f;
+            motor->measure.max_ecd         = 65535;
+            motor->measure.torque_constant = 0.7;
             break;
         default: // other motors should not be registered here
             while (1)
-                LOGERROR("[dji_motor]You must not register other motors using the API of DJI motor."); // 其他电机不应该在这里注册
+                LOGERROR("[lk_motor]You must not register other motors using the API of DJI motor."); // 其他电机不应该在这里注册
     }
+    motor->measure.offset      = config->offset;
+    motor->measure.is_reserved = config->is_reserved;
 
-    config->can_init_config.id = motor;
+    config->can_init_config.id                  = motor;
     config->can_init_config.can_module_callback = LKMotorDecode;
-    config->can_init_config.rx_id = 0x140 + config->can_init_config.tx_id;
-    config->can_init_config.tx_id = config->can_init_config.tx_id + 0x280 - 1; // 这样在发送写入buffer的时候更方便,因为下标从0开始,LK多电机发送id为0x280
-    motor->motor_can_ins = CANRegister(&config->can_init_config);
+    config->can_init_config.rx_id               = 0x140 + config->can_init_config.rx_id;
+    config->can_init_config.tx_id               = 0x140 + config->can_init_config.tx_id;
+    motor->motor_can_ins                        = CANRegister(&config->can_init_config);
 
-    if (idx == 0) // 用第一个电机的can instance发送数据
-    {
-        sender_instance = motor->motor_can_ins;
-        sender_instance->tx_id = 0x280; //  修改tx_id为0x280,用于多电机发送,不用管其他LKMotorInstance的tx_id,它们仅作初始化用
-    }
-
-    LKMotorStop(motor);
     DWT_GetDeltaT(&motor->measure.feed_dwt_cnt);
     lkmotor_instance[idx++] = motor;
 
     Daemon_Init_Config_s daemon_config = {
-        .callback = LKMotorLostCallback,
-        .owner_id = motor,
+        .callback     = LKMotorLostCallback,
+        .owner_id     = motor,
         .reload_count = 5, // 50ms
     };
     motor->daemon = DaemonRegister(&daemon_config);
@@ -108,63 +113,63 @@ LKMotorInstance *LKMotorInit(Motor_Init_Config_s *config)
 /* 第一个电机的can instance用于发送数据,向其tx_buff填充数据 */
 void LKMotorControl()
 {
-    float pid_measure, pid_ref;
-    int16_t set;
-    LKMotorInstance *motor;
-    LKMotor_Measure_t *measure;
-    Motor_Control_Setting_s *setting;
+    // float pid_measure, pid_ref;
+    // int16_t set;
+    // LKMotorInstance *motor;
+    // LKMotor_Measure_t *measure;
+    // Motor_Control_Setting_s *setting;
 
-    for (size_t i = 0; i < idx; ++i)
-    {
-        motor = lkmotor_instance[i];
-        measure = &motor->measure;
-        setting = &motor->motor_settings;
-        pid_ref = motor->pid_ref;
+    // for (size_t i = 0; i < idx; ++i)
+    // {
+    //     motor = lkmotor_instance[i];
+    //     measure = &motor->measure;
+    //     setting = &motor->motor_settings;
+    //     pid_ref = motor->pid_ref;
 
-        if ((setting->close_loop_type & ANGLE_LOOP) && setting->outer_loop_type == ANGLE_LOOP)
-        {
-            if (setting->angle_feedback_source == OTHER_FEED)
-                pid_measure = *motor->other_angle_feedback_ptr;
-            else
-                pid_measure = measure->total_angle;
-            pid_ref = PIDCalculate(&motor->angle_PID, pid_measure, pid_ref);
-            if (setting->feedforward_flag & SPEED_FEEDFORWARD)
-                pid_ref += *motor->speed_feedforward_ptr;
-        }
+    //     if ((setting->close_loop_type & ANGLE_LOOP) && setting->outer_loop_type == ANGLE_LOOP)
+    //     {
+    //         if (setting->angle_feedback_source == OTHER_FEED)
+    //             pid_measure = *motor->other_angle_feedback_ptr;
+    //         else
+    //             pid_measure = measure->total_angle;
+    //         pid_ref = PIDCalculate(&motor->angle_PID, pid_measure, pid_ref);
+    //         if (setting->feedforward_flag & SPEED_FEEDFORWARD)
+    //             pid_ref += *motor->speed_feedforward_ptr;
+    //     }
 
-        //反转检测
-        if (setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
-            pid_ref *= -1;
+    //     //反转检测
+    //     if (setting->motor_reverse_flag == MOTOR_DIRECTION_REVERSE)
+    //         pid_ref *= -1;
 
-        if ((setting->close_loop_type & SPEED_LOOP) && setting->outer_loop_type & (ANGLE_LOOP | SPEED_LOOP))
-        {
-            if (setting->angle_feedback_source == OTHER_FEED)
-                pid_measure = *motor->other_speed_feedback_ptr;
-            else
-                pid_measure = measure->speed_rads;
-            pid_ref = PIDCalculate(&motor->speed_PID, pid_measure, pid_ref);
-            if (setting->feedforward_flag & CURRENT_FEEDFORWARD)
-                pid_ref += *motor->current_feedforward_ptr;
-        }
+    //     if ((setting->close_loop_type & SPEED_LOOP) && setting->outer_loop_type & (ANGLE_LOOP | SPEED_LOOP))
+    //     {
+    //         if (setting->angle_feedback_source == OTHER_FEED)
+    //             pid_measure = *motor->other_speed_feedback_ptr;
+    //         else
+    //             pid_measure = measure->speed_rads;
+    //         pid_ref = PIDCalculate(&motor->speed_PID, pid_measure, pid_ref);
+    //         if (setting->feedforward_flag & CURRENT_FEEDFORWARD)
+    //             pid_ref += *motor->current_feedforward_ptr;
+    //     }
 
-        if (setting->close_loop_type & CURRENT_LOOP)
-        {
-            pid_ref = PIDCalculate(&motor->current_PID, measure->real_current, pid_ref);
-        }
+    //     if (setting->close_loop_type & CURRENT_LOOP)
+    //     {
+    //         pid_ref = PIDCalculate(&motor->current_PID, measure->real_current, pid_ref);
+    //     }
 
-        set = pid_ref;
-        
-        // 这里随便写的,为了兼容多电机命令.后续应该将tx_id以更好的方式表达电机id,单独使用一个CANInstance,而不是用第一个电机的CANInstance
-        memcpy(sender_instance->tx_buff + (motor->motor_can_ins->tx_id - 0x280) * 2, &set, sizeof(uint16_t));
+    //     set = pid_ref;
 
-        if (motor->stop_flag == MOTOR_STOP)
-        { // 若该电机处于停止状态,直接将发送buff置零
-            memset(sender_instance->tx_buff + (motor->motor_can_ins->tx_id - 0x280) * 2, 0, sizeof(uint16_t));
-        }
-    }
+    //     // 这里随便写的,为了兼容多电机命令.后续应该将tx_id以更好的方式表达电机id,单独使用一个CANInstance,而不是用第一个电机的CANInstance
+    //     memcpy(sender_instance->tx_buff + (motor->motor_can_ins->tx_id - 0x280) * 2, &set, sizeof(uint16_t));
 
-    if (idx) // 如果有电机注册了
-        CANTransmit(sender_instance, 0.2);
+    //     if (motor->stop_flag == MOTOR_STOP)
+    //     { // 若该电机处于停止状态,直接将发送buff置零
+    //         memset(sender_instance->tx_buff + (motor->motor_can_ins->tx_id - 0x280) * 2, 0, sizeof(uint16_t));
+    //     }
+    // }
+
+    // if (idx) // 如果有电机注册了
+    //     CANTransmit(sender_instance, 0.2);
 }
 
 void LKMotorStop(LKMotorInstance *motor)
@@ -185,4 +190,36 @@ void LKMotorSetRef(LKMotorInstance *motor, float ref)
 uint8_t LKMotorIsOnline(LKMotorInstance *motor)
 {
     return DaemonIsOnline(motor->daemon);
+}
+void LKMotorSetSpeed(LKMotorInstance *motor, int32_t speed)
+{
+    // float sign = motor->measure.is_reserved ? -1.0 : 1.0;
+    // speed *= sign;
+    motor->motor_can_ins->tx_buff[0] = 0xA2;
+    motor->motor_can_ins->tx_buff[1] = 0x00;
+    motor->motor_can_ins->tx_buff[2] = 0x00;
+    motor->motor_can_ins->tx_buff[3] = 0x00;
+
+    motor->motor_can_ins->tx_buff[4] = (uint8_t)(speed & 0xFF);
+    motor->motor_can_ins->tx_buff[5] = (uint8_t)((speed >> 8) & 0xFF);
+    motor->motor_can_ins->tx_buff[6] = (uint8_t)((speed >> 16) & 0xFF);
+    motor->motor_can_ins->tx_buff[7] = (uint8_t)((speed >> 24) & 0xFF);
+
+    CANTransmit(motor->motor_can_ins, 1);
+}
+void LKMotorSetTorque(LKMotorInstance *motor, float torque)
+{
+    float sign = motor->measure.is_reserved ? -1.0 : 1.0;
+    int16_t command_torque;
+    command_torque = (sign * torque / motor->measure.resolution)/motor->measure.torque_constant;
+
+    motor->motor_can_ins->tx_buff[0] = 0xA1;
+    motor->motor_can_ins->tx_buff[1] = 0x00;
+    motor->motor_can_ins->tx_buff[2] = 0x00;
+    motor->motor_can_ins->tx_buff[3] = 0x00;
+
+    motor->motor_can_ins->tx_buff[4] = (uint8_t)(command_torque & 0xFF);
+    motor->motor_can_ins->tx_buff[5] = (uint8_t)((command_torque >> 8) & 0xFF);
+    motor->motor_can_ins->tx_buff[6] = 0x00;
+    motor->motor_can_ins->tx_buff[7] = 0x00;
 }

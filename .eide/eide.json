@@ -9,10 +9,7 @@
     "bsp",
     "modules",
     "application",
-    "USB_DEVICE",
-    "application/servo",
-    "application/stretch",
-    "application/ui"
+    "USB_DEVICE"
   ],
   "virtualFolder": {
     "name": "<virtual_root>",
@@ -97,33 +94,18 @@
           "modules/daemon",
           "modules/vofa",
           "modules",
-          "application/chassis",
-          "application/cmd",
-          "application/gimbal",
-          "application/shoot",
           "application",
           "Middlewares/ST/ARM/DSP/Inc",
           "Core/Inc",
           "Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2",
-          "application/first_stretch",
           "modules/encoder",
-          "application/second_stretch",
-          "application/lift",
-          "application/horizontal",
-          "application/forward",
           "Middlewares/Third_Party/SEGGER/RTT",
           "Middlewares/Third_Party/SEGGER/Config",
           "USB_DEVICE/App",
           "USB_DEVICE/Target",
           "Middlewares/ST/STM32_USB_Device_Library/Core/Inc",
           "Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc",
-          "application/UI",
-          "application/servo",
-          "modules/motor/DMmotor",
-          "application/stretch",
-          "application/arm",
-          "application/vision",
-          "application/ui"
+          "modules/motor/DMmotor"
         ],
         "libList": [
           "Middlewares/ST/ARM/DSP/Lib",
@@ -135,6 +117,35 @@
           "STM32H723xx",
           "ARM_MATH_CM7"
         ]
+      },
+      "builderOptions": {
+        "GCC": {
+          "version": 5,
+          "beforeBuildTasks": [],
+          "afterBuildTasks": [],
+          "global": {
+            "$float-abi-type": "hard",
+            "output-debug-info": "enable"
+          },
+          "c/cpp-compiler": {
+            "language-c": "gnu17",
+            "language-cpp": "gnu++17",
+            "optimization": "level-0",
+            "warnings": "all-warnings",
+            "one-elf-section-per-function": true,
+            "one-elf-section-per-data": true
+          },
+          "asm-compiler": {
+            "ASM_FLAGS": "-DDEBUG"
+          },
+          "linker": {
+            "output-format": "elf",
+            "remove-unused-input-sections": true,
+            "LD_FLAGS": "-TSTM32H723VGTX_FLASH.ld",
+            "$toolName": "auto",
+            "LIB_FLAGS": "modules/algorithm/AHRS.lib"
+          }
+        }
       }
     },
     "Release": {
@@ -180,10 +191,40 @@
           "USE_HAL_DRIVER",
           "STM32H723xx"
         ],
-        "sourceDirList": [],
         "libList": []
+      },
+      "builderOptions": {
+        "GCC": {
+          "version": 5,
+          "beforeBuildTasks": [],
+          "afterBuildTasks": [],
+          "global": {
+            "$float-abi-type": "softfp",
+            "output-debug-info": "enable",
+            "misc-control": []
+          },
+          "c/cpp-compiler": {
+            "language-c": "c11",
+            "language-cpp": "c++11",
+            "optimization": "level-debug",
+            "warnings": "all-warnings",
+            "one-elf-section-per-function": true,
+            "one-elf-section-per-data": true,
+            "C_FLAGS": "",
+            "CXX_FLAGS": ""
+          },
+          "asm-compiler": {
+            "ASM_FLAGS": ""
+          },
+          "linker": {
+            "output-format": "elf",
+            "remove-unused-input-sections": true,
+            "LD_FLAGS": "",
+            "LIB_FLAGS": ""
+          }
+        }
       }
     }
   },
-  "version": "3.4"
+  "version": "3.5"
 }

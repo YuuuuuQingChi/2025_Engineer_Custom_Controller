@@ -56,7 +56,7 @@ typedef struct
     float v_ref;//目标速度/最大速度限制/随模式选择而变
     float p_ref;//目标位置
     float t_ref;//目标扭矩/最大扭矩限制/随模式选择而变
-    float KP,KD,t_ref;// 位置环P，位置环D,扭矩给定值
+    float KP,KD;// 位置环P，位置环D,扭矩给定值
 
     Motor_Working_Type_e stop_flag; // 启停标志
     CANInstance *motor_can_ins;
@@ -103,4 +103,5 @@ void DMMotorStop(DMMotorInstance *motor);
  */
 
 void DMMotorEnable(DMMotorInstance *motor);
+void DMMotor_MIT_SetRef(DMMotorInstance *motor, float KP , float KD , float t_ref);
 #endif // DMmotor_H

@@ -10,18 +10,13 @@
  */
 #include "bsp_init.h"
 #include "robot.h"
-#include "robot_def.h"
-#include "robot_task.h"
+
 #include "buzzer.h"
-#include "chassis.h"
-#include "lift.h"
-#include "arm.h"
-#include "robot_cmd.h"
-#include "stretch.h"
+#include "customer.h"
+
+
 #include "referee_UI.h"
-#include "ui.h"
-#include "servo.h"
-#include "vision_line.h"
+
 
 //int32_t flag_referee_init =0;
 //static referee_info_t *referee_data; // 用于获取裁判系统的数据
@@ -34,27 +29,11 @@ void RobotInit()
     __disable_irq();
 
     BSPInit();
-    RobotCMDInit();
-    ChassisInit();
-    Servo_Init();
-    //referee_data = RefereeHardwareInit(&huart10); // 裁判系统初始化,会同时初始化UI
-    //flag_referee_init=1;                 
-    Lift_Init();
-    Stretch_Init();
-    ARM_Init();
-    Vision_Int();
-    //uiInit();
-    Vision_Int();
+   ARM_Init();
     __enable_irq();
 }
 
 void RobotTask()
 {
-    RobotCMDTask();
-    ChassisTask();
-    Lift_Task();
-    Stretch_Task();
-    Servo_Task();
-    ARM_Task();
-    Vision_Task();
+   ARM_Control();
 }

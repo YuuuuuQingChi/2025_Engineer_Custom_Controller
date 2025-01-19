@@ -16,9 +16,9 @@
 
 static uint8_t idx = 0;
 static DMMotorInstance *dm_motor_instance[DM_MOTOR_MX_CNT] = {NULL}; // 会在control任务中遍历该指针数组进行pid计算
-static uint8_t ENABLE[8] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFC};
-static uint8_t STOP[8] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFD};
-static uint8_t CLEAR_ERROR[8] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFB};
+static uint8_t DM_ENABLE[8] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFC};
+static uint8_t DM_STOP[8] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFD};
+static uint8_t DM_CLEAR_ERROR[8] = {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFB};
 
 float Hex_To_Float(uint32_t *Byte,int num)//十六进制到浮点数
 {
@@ -188,9 +188,9 @@ void DMMotorControl()
             motor->motor_can_ins->tx_buff[7] = tor_tmp;
         }
 
-        if(motor->stop_flag == MOTOR_ENABLED && motor->measure.state != 0 && motor->measure.state != 1)memcpy(motor->motor_can_ins->tx_buff, CLEAR_ERROR, sizeof(CLEAR_ERROR));
-        if(motor->stop_flag == MOTOR_STOP)memcpy(motor->motor_can_ins->tx_buff, STOP, sizeof(STOP));
-        if(motor->stop_flag == MOTOR_ENABLED && motor->measure.state == 0)memcpy(motor->motor_can_ins->tx_buff, ENABLE, sizeof(ENABLE));
+        if(motor->stop_flag == MOTOR_ENABLED && motor->measure.state != 0 && motor->measure.state != 1)memcpy(motor->motor_can_ins->tx_buff, DM_CLEAR_ERROR, sizeof(DM_CLEAR_ERROR));
+        if(motor->stop_flag == MOTOR_STOP)memcpy(motor->motor_can_ins->tx_buff, DM_STOP, sizeof(DM_STOP));
+        if(motor->stop_flag == MOTOR_ENABLED && motor->measure.state == 0)memcpy(motor->motor_can_ins->tx_buff, DM_ENABLE, sizeof(DM_ENABLE));
         //发送
         CANTransmit(motor->motor_can_ins, 1);
     }        

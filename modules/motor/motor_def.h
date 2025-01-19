@@ -15,7 +15,7 @@
 #include "controller.h"
 #include "stdint.h"
 #include "bsp_can.h"
-
+#include "stdbool.h"
 #define LIMIT_MIN_MAX(x, min, max) (x) = (((x) <= (min)) ? (min) : (((x) >= (max)) ? (max) : (x)))
 
 /**
@@ -106,6 +106,9 @@ typedef enum
     M3508,
     M2006,
     LK9025,
+    LK_MS7015V3,
+    LK_MS9015,
+    LK_MG4010,
     HT04,
     LK_MS5005,
     DR_PDA04,
@@ -140,7 +143,9 @@ typedef struct
     Motor_Control_Setting_s controller_setting_init_config;
     Motor_Type_e motor_type;
     CAN_Init_Config_s can_init_config;
-
+    
+    uint32_t offset;
+    bool is_reserved;
 } Motor_Init_Config_s;
 
 #endif // !MOTOR_DEF_H
